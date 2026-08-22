@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<title>Trading</title>
+</head>
+<body>
+<div id="app">
+
+<!-- ============ ÉCRAN DE JEU ============ -->
+<section class="screen on" id="s-game">
+  <div class="topbar">
+    <div class="lvl">
+      <div class="lvl-badge" id="t-lvl">1</div>
+      <div class="lvl-meta">
+        <b id="t-xp">0 XP</b>
+        <div class="xpmini"><i id="t-xpbar" style="width:0%"></i></div>
+      </div>
+    </div>
+    <div class="mid" id="t-round">MANCHE 1 / 9</div>
+    <button class="icobtn" id="b-sound" aria-label="Son">&#9834;</button>
+    <button class="icobtn" id="b-menu" aria-label="Profil">&#9776;</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><u>CASH</u><b id="t-cash">10 000</b></div>
+    <div class="stat"><u>INVESTI</u><b id="t-inv">0</b></div>
+    <div class="stat"><u>PALIERS</u><b id="t-pal">0</b></div>
+    <div class="stat"><u>PRU</u><b id="t-pru">&mdash;</b></div>
+  </div>
+
+  <div class="chartwrap" id="chartwrap">
+    <canvas id="chart"></canvas>
+    <div class="chip anon">ACTIF <span class="q">? ? ?</span> &middot; P&Eacute;RIODE MASQU&Eacute;E</div>
+    <div class="zoomctl">
+      <button class="zbtn" id="b-zout" aria-label="D&eacute;zoomer">&minus;</button>
+      <button class="zbtn" id="b-zin" aria-label="Zoomer">+</button>
+      <button class="zbtn sm" id="b-scale">LOG</button>
+      <div class="chip" style="position:static;justify-content:center;padding:6px 9px" id="t-span">3 ANS</div>
+    </div>
+    <div class="gate" id="gate"><span>&#128274;</span><span id="gatetxt">D&eacute;zoome pour d&eacute;bloquer la d&eacute;cision</span></div>
+  </div>
+
+  <div class="deck">
+    <div class="hints">
+      <span>&#9664; ATTENDRE</span><span id="hint-up">&#9650; PRENDRE DES PROFITS</span><span>POSER UN PALIER &#9654;</span>
+    </div>
+    <div class="card locked" id="card">
+      <div class="tint" id="tint"></div>
+      <div class="arrow l">&#9664;</div><div class="arrow r">&#9654;</div><div class="arrowup" id="aup">&#9650;</div>
+      <div class="face" id="face">
+        <div class="big" id="f-big">GLISSE POUR D&Eacute;CIDER</div>
+        <div class="sub" id="f-sub">jamais tout d&rsquo;un coup &middot; 35 % max par palier</div>
+      </div>
+      <div class="gauge" id="gauge"><i id="gaugefill"></i></div>
+    </div>
+  </div>
+  <div class="toast" id="toast"></div>
+</section>
+
+<!-- ============ BILAN DE FIN DE CYCLE ============ -->
+<section class="screen" id="s-result" style="overflow-y:auto;padding:calc(env(safe-area-inset-top) + 18px) 18px calc(env(safe-area-inset-bottom) + 20px)">
+  <div id="res-body"></div>
+</section>
+
+<!-- animation de mont&eacute;e de niveau -->
+<div id="levelup"><div class="lu">
+  <div class="ring"><b id="lu-n">2</b></div>
+  <h3>NIVEAU ATTEINT</h3><p id="lu-p">Tu lis mieux les zones.</p>
+</div></div>
+
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/score.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/chart.js"></script>
+<script src="assets/js/game.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/app.js"></script>
+</body></html>

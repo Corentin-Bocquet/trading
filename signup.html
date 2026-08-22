@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<title>Trading · Créer un compte</title>
+</head>
+<body>
+<div id="app">
+<section class="page">
+  <a class="back" href="index.html">← RETOUR</a>
+  <div class="brand">
+    <div class="mark"><img src="assets/icons/logo.png" alt=""></div>
+    <div><div class="nm">Créer un compte</div><div class="sb">30 SECONDES, PAS PLUS</div></div>
+  </div>
+  <p class="lead">Le pseudo est ce que voient les autres joueurs au classement.
+  L'email sert uniquement à retrouver ta progression.</p>
+  <div id="authform" data-mode="signup">
+    <input class="inp" id="i-pseudo" autocomplete="nickname" placeholder="Pseudo affiché au classement" maxlength="18">
+    <input class="inp" id="i-mail" type="email" autocomplete="email" inputmode="email" placeholder="Email">
+    <input class="inp" id="i-pass" type="password" autocomplete="new-password" placeholder="Mot de passe (6 caractères minimum)">
+    <input class="inp" id="i-pass2" type="password" autocomplete="new-password" placeholder="Confirme le mot de passe">
+    <div class="err" id="err"></div><div class="ok" id="okmsg"></div>
+    <button class="btn" id="submit">Créer mon compte</button>
+  </div>
+  <div class="linkrow"><a href="login.html">J’ai déjà un compte</a><a href="app.html">Jouer sans compte</a></div>
+  <div class="grow"></div>
+  <p class="note" style="margin-top:20px">Les données stockées se limitent à : pseudo, email, niveau,
+  XP et scores de parties. Rien d'autre.</p>
+</section>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/score.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/auth.js"></script>
+</body></html>
