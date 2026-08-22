@@ -1,0 +1,34 @@
+name: sync
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Recuperer la nouvelle version
+        run: |
+          curl -sSL -o app.zip "https://nrhkijgxbxslczutjrev.supabase.co/storage/v1/object/public/seed/trading-v2.zip"
+          unzip -o -q app.zip
+          rm -f trading-fichier-unique.html
+          cp -a trading/. ./
+          rm -rf trading app.zip
+          rm -f .github/workflows/sync.yml
+          rmdir .github/workflows .github 2>/dev/null || true
+
+      - name: Publier
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "rien a publier"; exit 0; fi
+          git commit -m "Mode SIMPLE (gestuel, sans texte) + compte obligatoire [skip ci]"
+          git push
