@@ -6,86 +6,72 @@ on **dézoome**, et on **fractionne** ses entrées et ses sorties par paliers.
 
 ## Deux modes, une seule progression
 
-Une bascule **SIMPLE / PRO** est présente dans la barre du haut de chaque écran.
-Les deux partagent le même compte, les mêmes données, le même scoring et le
-même XP : seule l'interface change.
+Bascule **SIMPLE / PRO** en haut de chaque écran. Même compte, même portefeuille,
+même scoring : seule la densité d'information change. SIMPLE affiche des mots et
+des gestes, PRO affiche les chiffres, les axes et le détail décision par décision.
 
-**SIMPLE** — gestuel, sans texte. Deux pictogrammes sur les bords de la carte
-(⏳ à gauche pour attendre, 💰 à droite pour poser un palier, 💸 vers le haut
-pour prendre des profits), une barre de cash, des pièces pour les paliers posés,
-un cadenas qui s'ouvre quand on a assez dézoomé, et un pictogramme plein écran
-en retour de chaque décision. Le bilan tient en une pastille de qualité,
-le nom de l'actif, deux dates et un multiplicateur.
+Un nouveau compte démarre en SIMPLE ; le choix est ensuite mémorisé.
 
-**PRO** — dense. Cash, investi, nombre de paliers, prix de revient, axes chiffrés,
-échelle log ou linéaire, notation détaillée décision par décision, drawdown depuis
-l'ATH, distance à la MM200, distance au halving, courbe de calibration.
+## Sept marchés
 
-Un nouveau compte démarre en mode SIMPLE ; le choix est ensuite mémorisé.
+Le marché se choisit sur l'accueil, en un mot :
 
-## Profil
+| Marché | Contenu |
+|---|---|
+| TOUT | les 38 actifs |
+| CRYPTO | Bitcoin, Ethereum, XRP, Litecoin, Cardano, Dogecoin, Solana, Chainlink |
+| INDICES | S&P 500 depuis 1950, Nasdaq depuis 1971, SPY |
+| GÉANTES | Apple, Microsoft, Amazon, Alphabet, Meta, Nvidia, Tesla, JPMorgan… |
+| AGITÉES | les huit actions au repli moyen le plus fort, mesuré sur leur historique |
+| SECTEURS | tech, énergie, santé, banque, conso, défense |
+| ENTREPRISE | une entreprise précise, choisie par recherche |
 
-Photo et pseudo se modifient depuis la page profil (le crayon à côté du nom,
-ou la photo elle-même). L'image est recadrée en carré, réduite à 128 px et
-compressée dans le navigateur avant l'envoi : quelques kilo-octets, jamais le
-fichier d'origine. Les deux sont stockés sur le compte et suivent l'appareil.
+**158 cycles** au total. L'actif et la période restent cachés jusqu'à la fin du cycle,
+même quand on choisit l'entreprise soi-même.
 
-## Deux mesures au classement
+Les séries de prix sont chargées à la demande : le catalogue pèse 32 Ko, chaque
+actif environ 50 Ko, et seul l'actif joué est téléchargé.
 
-Le classement bascule entre deux colonnes :
+## Le portefeuille
 
-- **XP** — récompense le temps de jeu. Plus tu joues, plus tu montes.
-- **PRÉCISION** — part des décisions posées dans la bonne zone du cycle,
-  affichée à partir de 20 décisions. C'est la mesure de qualité : elle ne
-  monte pas parce qu'on joue beaucoup, mais parce qu'on se trompe moins.
+Tout le monde commence avec **10 000 $**. Ce portefeuille suit d'un cycle à l'autre :
+il n'est pas remis à zéro entre deux parties. S'il tombe sous 500 $, le joueur est
+recapitalisé à 10 000 $ et son compteur de **ruines** augmente d'une unité. Ce compteur
+est affiché à côté de son nom au classement.
+
+Trois mesures de comparaison, une phrase d'explication pour chacune dans l'app :
+
+- **ARGENT** — ce qu'il reste dans le portefeuille.
+- **GAIN** — tout ce qui a été gagné ou perdu depuis le premier cycle, ruines comprises.
+- **DÉCISIONS** — sur 100 décisions, combien étaient dans la bonne zone du cycle.
+
+## Les gestes
+
+Glisser à droite pour **ACHETER**, à gauche pour **ATTENDRE**, vers le haut pour
+**ENCAISSER**. Le pourcentage engagé va de 5 % à 100 % : deux repères sont dessinés
+sur la jauge à 35 % et 66 %, et la tranche est nommée pendant le geste
+(PALIER, GROS, TRÈS GROS, TOUT). Rien n'est interdit, mais le bilan pénalise
+la concentration et récompense le fractionnement.
 
 ## Obligation de dézoomer
 
-Par défaut, la décision reste bloquée tant que le joueur n'a pas pris assez de
-recul sur le cycle. La consigne est affichée explicitement : une bulle rouge
-pointe le bouton de dézoom (qui clignote), et la carte elle-même affiche
-« DÉZOOME D'ABORD » au lieu des actions. Un geste tenté trop tôt fait vibrer la
-carte plutôt que de ne rien faire.
+**Désactivée par défaut.** Elle s'active depuis la page compte, section Réglages.
+Activée, la consigne pointe explicitement le bouton de dézoom, la carte affiche
+« DÉZOOME D'ABORD », et un geste tenté trop tôt fait vibrer la carte.
 
-Le réglage se désactive depuis la page profil, section **Réglages**.
-Désactivé, la décision est disponible dès la première seconde et aucune consigne
-n'apparaît. C'est plus rapide, mais c'est aussi le garde-fou qui fait tout
-l'intérêt de l'exercice qui saute.
+## Rappel quotidien
 
-## Compte obligatoire
+Une notification par jour, activable depuis la page compte.
 
-Il n'y a pas de mode invité : sans compte, `app.html` et `profil.html` renvoient
-vers la page de connexion. Une fois connecté, l'app reste jouable hors réseau
-et la progression repart vers le serveur au retour de la connexion.
+Sur iPhone, l'app doit d'abord être installée sur l'écran d'accueil : Safari seul
+n'autorise pas les notifications. L'envoi est fait par `.github/workflows/rappel.yml`,
+qui lit les abonnés dans Supabase et appelle `tools/rappel.mjs`. Deux secrets sont
+à créer dans **Settings → Secrets and variables → Actions** du dépôt :
 
-## En ligne
+- `VAPID_PRIVATE` — clé privée des notifications
+- `SUPABASE_SERVICE` — clé `service_role` du projet Supabase
 
-**https://corentin-bocquet.github.io/trading/**
-
-Le site est publié automatiquement depuis la branche `main` par GitHub Pages.
-Toute modification poussée sur `main` est en ligne une minute plus tard.
-
-## Installer sur l'écran d'accueil
-
-**iPhone** : ouvrir l'adresse ci-dessus dans **Safari** (pas Chrome, iOS
-n'autorise l'installation que depuis Safari), bouton **Partager** →
-**Sur l'écran d'accueil**. L'app apparaît sous le nom **Trading** avec son
-icône, et s'ouvre en plein écran sans barre de navigateur.
-
-**Android** : ouvrir l'adresse dans Chrome, menu ⋮ → **Installer l'application**.
-
-Une fois installée, l'app reste jouable sans connexion grâce au service worker.
-Seules la création de compte, la sauvegarde serveur et le classement ont besoin
-du réseau.
-
-## En local
-
-Ouvrir `index.html` dans un navigateur suffit pour jouer. Pour retrouver le
-comportement exact du site (service worker compris), servir le dossier :
-
-```bash
-python3 -m http.server 8000
-```
+Sans ces deux secrets, la tâche s'arrête proprement en le signalant.
 
 ## Arborescence
 
@@ -100,7 +86,8 @@ sw.js                      service worker : jeu disponible hors connexion
 assets/css/style.css       design system complet
 assets/js/core.js          outils, état global, persistance locale
 assets/js/audio.js         effets sonores
-assets/js/data.js          données OHLC réelles + scénarios de cycle
+assets/data/catalogue.js   catalogue des 38 actifs + 158 cycles
+assets/data/S_*.js         une série de prix par actif, chargée à la demande
 assets/js/score.js         notation par zone de cycle
 assets/js/chart.js         moteur de rendu des bougies japonaises
 assets/js/game.js          logique de jeu, swipe, reveal, bilan
@@ -109,7 +96,9 @@ assets/js/cloud.js         Supabase (auth + sauvegarde)
 assets/js/app.js           amorçage de la page de jeu
 assets/js/home.js          amorçage de l'accueil
 assets/js/auth.js          amorçage des pages connexion / inscription
-assets/js/profil.js        amorçage de la page progression
+assets/js/profil.js        amorçage de la page compte
+assets/js/notif.js         abonnement au rappel quotidien
+tools/rappel.mjs           envoi des rappels (exécuté par GitHub Actions)
 assets/sounds/*.mp3        effets sonores
 assets/icons/*.png         icônes d'application
 ```

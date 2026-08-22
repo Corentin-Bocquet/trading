@@ -19,7 +19,7 @@ function gradeSell(z){
   return          {k:'bad',pts:-2,t:'VENTE EN CREUX',   d:'Vendre en bas de cycle : c’est la faute la plus coûteuse du jeu.'};
 }
 function gradeWait(z){
-  if(z<=0.20 && G.cash > CAPITAL_INIT*0.5)
+  if(z<=0.20 && G.cash > G.capital*0.5)
     return {k:'bad',pts:-1,t:'ATTENTE EN CREUX', d:'Tu attendais pile dans la meilleure zone avec du cash plein les poches.'};
   if(z>=0.80) return {k:'exc',pts:1,t:'PATIENCE OK', d:'Ne rien faire près du sommet précédent est une décision, et une bonne.'};
   return          {k:'tie',pts:0,t:'ATTENTE NEUTRE',    d:'Zone intermédiaire : attendre ne coûte ni ne rapporte.'};

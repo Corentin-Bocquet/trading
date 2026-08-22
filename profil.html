@@ -10,79 +10,85 @@
 <meta name="apple-mobile-web-app-title" content="Trading">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png">
 <link rel="icon" href="assets/icons/favicon.png">
 <link rel="stylesheet" href="assets/css/style.css">
-<title>Trading &middot; Progression</title>
+<title>Trading &middot; Mon compte</title>
 </head>
 <body>
 <div id="app">
 <section class="page">
+
   <div class="phead">
-    <button class="bigav" id="p-av" aria-label="Changer la photo">
-      <span id="p-avin"></span><i class="pen">&#9998;</i>
-    </button>
+    <button class="bigav" id="p-av" aria-label="Changer la photo"><span id="p-avin"></span></button>
     <div class="pinfo">
-      <div class="prow">
-        <span id="p-nom">Toi</span>
-        <button class="pen sm" id="p-editbtn" aria-label="Modifier le profil">&#9998;</button>
-      </div>
+      <div class="prow"><span id="p-nom">Toi</span></div>
       <div class="note" id="p-meta"></div>
     </div>
-    <a class="icobtn" href="app.html" style="text-decoration:none" aria-label="Jouer">&#9654;</a>
-    <a class="icobtn" href="index.html" style="text-decoration:none" aria-label="Accueil">&#10005;</a>
+    <button class="wordbtn sm" id="p-editbtn">MODIFIER</button>
   </div>
+
+  <div class="walletbig" id="p-wallet"></div>
 
   <div class="swrow"><div class="modesw" id="modesw">
     <b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b>
   </div></div>
 
+  <a class="btn" href="app.html" id="b-play">JOUER</a>
+  <a class="btn ghost" href="index.html">FERMER ET REVENIR À L'ACCUEIL</a>
+
   <div id="p-edit" class="editbox">
     <input class="inp" id="e-pseudo" maxlength="18" placeholder="Ton pseudo">
     <div class="row">
-      <button class="btn ghost" id="e-photo">&#128247;&nbsp; Photo</button>
-      <button class="btn ghost" id="e-rm">&#128465;&nbsp; Retirer</button>
+      <button class="btn ghost" id="e-photo">CHOISIR UNE PHOTO</button>
+      <button class="btn ghost" id="e-rm">RETIRER LA PHOTO</button>
     </div>
     <div class="err" id="e-err"></div><div class="ok" id="e-ok"></div>
     <div class="row">
-      <button class="btn" id="e-save">Enregistrer</button>
-      <button class="btn ghost" id="e-cancel">Annuler</button>
+      <button class="btn" id="e-save">ENREGISTRER</button>
+      <button class="btn ghost" id="e-cancel">ANNULER</button>
     </div>
     <input type="file" id="e-file" accept="image/*" style="display:none">
   </div>
 
   <div id="p-mission"></div>
 
-  <h2>Réglages</h2>
-  <div class="kv">
-    <span>Obligation de dézoomer
-      <span class="note" style="display:block;margin-top:3px">Bloque la décision tant que tu n'as pas
-      pris de recul sur le cycle. C'est le cœur de l'entraînement.</span>
-    </span>
-    <button class="sw" id="s-gate" role="switch" aria-checked="true"><i></i></button>
-  </div>
-
   <h2>Classement</h2>
   <div id="p-lb"><p class="note">Chargement&hellip;</p></div>
 
-  <h2>Courbe de calibration</h2>
-  <canvas id="calib" style="width:100%;height:150px;display:block"></canvas>
-  <p class="note">Chaque point = une partie. Ce qui compte n&rsquo;est pas un bon score isol&eacute;,
-  c&rsquo;est la pente : est-ce que tu te trompes de zone de moins en moins souvent&nbsp;?</p>
+  <h2>Ton argent dans le temps</h2>
+  <canvas id="calib" style="width:100%;height:160px;display:block"></canvas>
+  <p class="expl">Chaque point est un cycle joué. La ligne pointillée est ton point de départ :
+  10&nbsp;000&nbsp;$. Un point rouge veut dire que tu avais tout perdu.</p>
+
+  <h2>Réglages</h2>
+  <div class="kv">
+    <span>Obliger à dézoomer avant de décider
+      <span class="note" style="display:block;margin-top:3px">Bloque la décision tant que tu n'as pas
+      pris de recul sur le cycle.</span>
+    </span>
+    <button class="sw" id="s-gate" role="switch" aria-checked="false"><i></i></button>
+  </div>
+  <div class="kv">
+    <span>Rappel quotidien
+      <span class="note" style="display:block;margin-top:3px">Une notification par jour pour venir jouer un cycle.</span>
+    </span>
+    <button class="sw" id="s-notif" role="switch" aria-checked="false"><i></i></button>
+  </div>
+  <div class="err" id="n-err"></div>
 
   <h2>Historique</h2>
   <div id="p-hist"></div>
 
-  <a class="btn" href="app.html" style="margin-top:22px">Jouer un cycle</a>
-  <button class="btn ghost" id="b-out">Se d&eacute;connecter</button>
+  <button class="btn ghost" id="b-out" style="margin-top:22px">SE DÉCONNECTER</button>
   <div class="grow"></div>
 </section>
 </div>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/audio.js"></script>
+<script src="assets/data/catalogue.js"></script>
 <script src="assets/js/score.js"></script>
 <script src="assets/js/cloud.js"></script>
 <script src="assets/js/ui.js"></script>
+<script src="assets/js/notif.js"></script>
 <script src="assets/js/profil.js"></script>
 </body></html>

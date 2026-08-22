@@ -4,17 +4,17 @@
 (async function bootApp(){
   if(!requireAuth()) return;
   wireModeSwitch();
-  // contrôles graphiques
+  $('#t-marche').textContent = NOM_MARCHE(G.marche);
+
   $('#b-zin').onclick   = ()=>zoom(1);
   $('#b-zout').onclick  = ()=>zoom(-1);
   $('#b-scale').onclick = ()=>{ G.view.scale = G.view.scale==='log'?'lin':'log';
     Audio_.play('click'); updateGate(); Chart.draw(); };
   $('#b-sound').onclick = ()=>{ const on=Audio_.toggle();
-    $('#b-sound').textContent = on?'♪':'✕'; $('#b-sound').style.opacity = on?1:.4; };
-  if(!Audio_.isOn()){ $('#b-sound').textContent='✕'; $('#b-sound').style.opacity=.4; }
+    $('#b-sound').textContent = on?'SON':'MUET'; $('#b-sound').classList.toggle('off',!on); };
+  if(!Audio_.isOn()){ $('#b-sound').textContent='MUET'; $('#b-sound').classList.add('off'); }
   $('#b-menu').onclick  = ()=>{ Audio_.play('click'); go('profil.html'); };
 
-  // zoom molette + pincement à deux doigts
   const cw = $('#chartwrap');
   cw.addEventListener('wheel', e=>{ e.preventDefault(); if(!G.sc) return;
     const avail = G.decIdx - G.sc.start + 1;
@@ -38,7 +38,6 @@
   cw.addEventListener('pointerup',clr); cw.addEventListener('pointercancel',clr);
   window.addEventListener('resize', ()=>{ if(G.sc){ Chart.resize(); Chart.draw(); } });
 
-  // synchronisation du profil serveur avant de lancer la partie
   if(G.token){ try{ await Cloud.restore(); }catch(e){} applyMode(); }
   startSession();
 })();

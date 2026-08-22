@@ -415,3 +415,156 @@ a.btn{text-decoration:none;text-align:center;display:block}
   background:#8b919c;transition:.22s;display:block}
 .sw.on{background:linear-gradient(150deg,#ffd34d,#f5a524);border-color:transparent}
 .sw.on i{left:23px;background:#3a2600}
+
+/* ============================================================
+   REFONTE : des mots à la place des pictogrammes
+   ============================================================ */
+
+/* --- boutons texte --- */
+.wordbtn{padding:8px 11px;border-radius:10px;background:var(--panel3);border:1px solid var(--line);
+  font-size:10.5px;font-weight:800;letter-spacing:.07em;color:var(--txt);white-space:nowrap}
+.wordbtn.sm{padding:7px 9px;font-size:9.5px}
+.wordbtn.off{opacity:.45}
+.marchebtn{flex:1;text-align:center;text-decoration:none;padding:8px 8px;border-radius:10px;
+  background:rgba(245,165,36,.12);border:1px solid rgba(245,165,36,.35);color:var(--gold2);
+  font-size:11px;font-weight:800;letter-spacing:.08em;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;max-width:44%}
+
+/* --- deuxième ligne : manche + bascule de mode --- */
+.subbar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--panel2);
+  border-bottom:1px solid var(--line);flex:0 0 auto;font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;color:var(--muted)}
+.subbar .dots{display:none}
+.subbar .modesw{margin-left:auto}
+.simple .subbar #t-round{display:none}
+.simple .subbar .dots{display:flex}
+.simple .topbar .lvl-meta{display:none}
+
+/* --- bandeau argent du mode simple --- */
+.money{display:none;align-items:center;gap:10px;padding:9px 12px;background:var(--panel2);
+  border-bottom:1px solid var(--line);flex:0 0 auto}
+.simple .money{display:flex}
+.money .mcol{flex:0 0 auto;min-width:0}
+.money .mcol.right{text-align:right}
+.money .mcol u{display:block;font-size:8.5px;letter-spacing:.09em;color:var(--dim);
+  text-decoration:none;font-weight:800;margin-bottom:2px}
+.money .mcol b{display:block;font-size:14px;font-family:var(--mono);font-weight:700}
+.money .bar{flex:1;height:10px;border-radius:7px;background:#22262e;overflow:hidden;min-width:30px}
+.money .bar i{display:block;height:100%;border-radius:7px;transition:width .5s cubic-bezier(.2,.9,.25,1);
+  background:linear-gradient(90deg,#9fdc1e,#c8f83a)}
+
+/* --- carte de décision : trois mots, trois couleurs --- */
+.arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:2;pointer-events:none;opacity:1}
+.arrow.l{left:14px} .arrow.r{right:14px}
+.arrow u{text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.06em;
+  padding:6px 9px;border-radius:9px;display:block}
+.simple .arrow u{font-size:13px;padding:8px 12px}
+.w-buy{color:#16c784;background:rgba(22,199,132,.14)}
+.w-wait{color:#c3c9d4;background:rgba(134,141,154,.14)}
+.w-sell{color:#93c5fd;background:rgba(59,130,246,.14)}
+.face .act{display:block;font-size:13px;font-weight:800;letter-spacing:.08em;
+  background:none;padding:0;margin-bottom:2px}
+.simple .face .act{font-size:16px}
+.face .tranche{display:block;font-size:10px;font-weight:800;letter-spacing:.1em;margin-top:3px}
+.tranche.t1{color:#5fe8b6} .tranche.t2{color:var(--gold2)}
+.tranche.t3{color:#ffa06a} .tranche.t4{color:#ff9098}
+.swipehint{font-size:15px;opacity:.5;letter-spacing:.04em;font-weight:600}
+.simple .swipehint{font-size:18px}
+.lockface{font-size:14px;font-weight:800;letter-spacing:.05em;color:#ff9098}
+.simple .lockface{font-size:17px}
+.gauge .mark{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.5);
+  text-decoration:none;display:block;z-index:3}
+#gaugefill.g-buy{background:linear-gradient(90deg,#16c784,#5fe8b6)}
+#gaugefill.g-sell{background:linear-gradient(90deg,#3b82f6,#93c5fd)}
+#gaugefill.t3{background:linear-gradient(90deg,#f5a524,#ffa06a)}
+#gaugefill.t4{background:linear-gradient(90deg,#ea3943,#ff9098)}
+
+/* --- retour plein écran : un mot --- */
+#flash b{font-size:52px;font-weight:800;letter-spacing:.04em;line-height:1;
+  padding:18px 30px;border-radius:22px;backdrop-filter:blur(6px)}
+.simple #flash b{font-size:60px}
+#flash.v-exc b{color:#5fe8b6;background:rgba(22,199,132,.16);box-shadow:0 0 60px rgba(22,199,132,.3)}
+#flash.v-cor b{color:var(--gold3);background:rgba(245,165,36,.16)}
+#flash.v-tie b{color:#c3c9d4;background:rgba(134,141,154,.16)}
+#flash.v-bad b{color:#ff9098;background:rgba(234,57,67,.16)}
+
+/* --- encadré d'explication --- */
+.expl{margin:12px 0;padding:13px 15px;border-radius:14px;background:var(--panel2);
+  border:1px solid var(--line);border-left:3px solid var(--gold);
+  font-size:13.5px;line-height:1.5;color:#c3c9d4;font-style:normal}
+.expl b{color:var(--txt);font-weight:700}
+
+/* --- portefeuille --- */
+.walletbig{position:relative;text-align:center;padding:18px 16px;border-radius:18px;
+  background:linear-gradient(160deg,#1b1f27,#141720);border:1px solid var(--line);margin:6px 0}
+.walletbig u{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--dim);
+  text-decoration:none;font-weight:800}
+.walletbig b{display:block;font-size:40px;font-family:var(--mono);font-weight:800;margin:6px 0 4px}
+.walletbig i{font-style:normal;font-size:13px;font-weight:700}
+.wallet{width:100%;text-align:center;padding:14px;border-radius:16px;background:var(--panel2);
+  border:1px solid var(--line);margin-top:18px}
+.wallet u{display:block;font-size:9.5px;letter-spacing:.14em;color:var(--dim);
+  text-decoration:none;font-weight:800;margin-bottom:5px}
+.wallet b{font-size:32px;font-family:var(--mono);font-weight:800}
+.ruinebox{width:100%;margin-top:16px;padding:14px;border-radius:14px;text-align:center;
+  background:rgba(234,57,67,.14);border:1px solid rgba(234,57,67,.45);
+  color:#ff9098;font-weight:800;font-size:15px;letter-spacing:.04em}
+.ruinebox span{display:block;font-weight:600;font-size:12px;margin-top:5px;color:#ffb3b8;letter-spacing:0}
+.ruine{display:inline-block;margin-left:7px;padding:2px 7px;border-radius:6px;font-size:9px;
+  font-weight:800;letter-spacing:.05em;background:rgba(234,57,67,.2);color:#ff9098;vertical-align:middle}
+.ruine.big{position:absolute;top:12px;right:12px;font-size:10px;padding:4px 9px}
+
+/* --- choix du marché --- */
+.mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-bottom:10px}
+.mgrid.sub{grid-template-columns:repeat(3,1fr);max-height:270px;overflow-y:auto}
+.mbtn{padding:16px 8px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);
+  font-size:13px;font-weight:800;letter-spacing:.05em;color:var(--txt);text-align:center}
+.mgrid.sub .mbtn{padding:12px 6px;font-size:11px}
+.mbtn.on{background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600;border-color:transparent;
+  box-shadow:0 6px 18px rgba(245,165,36,.25)}
+.mnow{text-align:center;font-size:11px;letter-spacing:.1em;color:var(--dim);font-weight:800;margin-top:12px}
+.mnow b{color:var(--gold2)}
+
+/* --- classement : trois mesures, liste dépliable --- */
+.lbtabs b{padding:8px 12px;font-size:9.5px}
+.lbmore{display:block;width:100%;margin-top:12px;padding:12px;border-radius:12px;
+  background:var(--panel3);border:1px solid var(--line);color:var(--txt);
+  font-size:11px;font-weight:800;letter-spacing:.08em}
+.lblist{border:1px solid rgba(245,165,36,.16);border-radius:18px;overflow:hidden;background:#0d0d0f}
+.lbline{display:flex;align-items:center;gap:11px;padding:11px 14px;border-bottom:1px solid #191b20}
+.lbline:last-child{border-bottom:0}
+.lbline .rk{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  font-size:11px;font-weight:800;font-family:var(--mono);background:#2a2d33;color:#cfd4dd}
+.lbline .nm{flex:1;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lbline .pt{font-size:13px;font-weight:800;font-family:var(--mono);color:var(--gold2)}
+.lbline.me{background:rgba(245,165,36,.1)}
+.lbline:nth-child(1) .rk{background:#f5a524;color:#3a2600}
+.lbline:nth-child(2) .rk{background:#9aa2b1;color:#1b1d22}
+.lbline:nth-child(3) .rk{background:#b07d4a;color:#221407}
+
+/* --- barre de missions : le niveau au lieu d'un pictogramme --- */
+.mico{flex:0 0 auto;width:56px;height:56px;border-radius:50%;display:grid;place-items:center;
+  position:relative;background:radial-gradient(circle at 50% 40%,#2a2410,#141208 70%);
+  box-shadow:0 0 0 1.5px rgba(245,165,36,.5),0 0 26px rgba(245,165,36,.35)}
+.mico b{font-size:22px;font-weight:800;font-family:var(--mono);color:var(--gold2);line-height:1}
+.mico u{position:absolute;bottom:9px;font-size:7px;letter-spacing:.12em;color:var(--gold);
+  text-decoration:none;font-weight:800}
+
+/* --- bilan simple --- */
+.bigbtn{width:100%;height:auto;border-radius:16px;padding:17px;font-size:15px;font-weight:800;
+  letter-spacing:.08em;margin:24px 0 0}
+.sres .row2{display:flex;gap:10px;margin-top:12px;width:100%}
+.sres .row2 .wordbtn{flex:1;padding:13px 8px;font-size:10.5px}
+.sres .mini u{font-size:9px;letter-spacing:.09em;color:var(--dim);font-weight:800;margin-bottom:4px}
+.sres .mini b{font-size:22px}
+.sres .xp{font-size:14px;color:var(--muted);font-weight:700}
+
+/* --- interrupteur indisponible --- */
+.sw.off{opacity:.4}
+
+/* --- l'ancien pictogramme du verrou n'existe plus --- */
+.gate span:first-child{display:none}
+.simple .gate span:last-child{display:inline}
+/* avatars du classement déplié */
+.lbline .av{width:28px;height:28px;border-radius:50%;font-size:11px}
+.lbline .pt{white-space:nowrap}

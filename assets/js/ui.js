@@ -1,9 +1,14 @@
 /* ============================================================
-   SECTION GAMIFICATION / UI
+   INTERFACE : barre de missions, classement, montée de niveau,
+   courbe de progression, écrans de bilan.
+   Règle de cette interface : un mot, jamais un pictogramme seul.
    ============================================================ */
 function athAt(i){ let m=0; for(let k=0;k<=i;k++) if(G.ser.ohlc[k][1]>m) m=G.ser.ohlc[k][1]; return m; }
 
-/* --- barre de progression "missions" : reproduction du visuel fourni --- */
+/* encadré d'explication : une phrase, mise en valeur */
+function expl(txt){ return `<p class="expl">${txt}</p>`; }
+
+/* --- barre de progression "missions" --- */
 function missionBar(){
   const done = missionDone(), reste = MISSIONS_PAR_NIVEAU-done;
   const p = done/MISSIONS_PAR_NIVEAU;
@@ -11,7 +16,7 @@ function missionBar(){
   for(let k=0;k<reste;k++) dots += '<s class="'+(k===0?'hot':'')+'"></s>';
   return `<div class="missionwrap"><div class="missioncard">
     <div class="mtop">
-      <div class="mico"><i></i></div>
+      <div class="mico"><b>${G.prof.level}</b><u>NIVEAU</u></div>
       <div class="mtxt"><b>Bien joué&nbsp;!</b> Encore ${reste} mission${reste>1?'s':''} pour passer au niveau ${G.prof.level+1}.</div>
     </div>
     <div class="mtrack">
@@ -23,7 +28,7 @@ function missionBar(){
   </div></div>`;
 }
 
-/* --- classement empilé : reproduction du visuel fourni --- */
+/* --- classement --- */
 const SPARK='<svg width="13" height="13" viewBox="0 0 24 24" style="flex:0 0 auto"><path d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0z" fill="currentColor"/></svg>';
 const AVCOL=['#e0648a','#5b8def','#3fbf8f','#8b5cf6','#f59e0b','#ef4444'];
 function avatar(nom, photo){
@@ -32,48 +37,64 @@ function avatar(nom, photo){
   const col=AVCOL[Math.abs(h)%AVCOL.length];
   return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${(nom||'?')[0].toUpperCase()}</div>`;
 }
-function leaderboard(list, rang, demo, moi, metric){
-  metric = metric || 'xp';
-  // la précision classe sur la qualité des décisions, l'XP sur le volume joué
-  let tri = list.slice();
-  if(metric==='prec'){
-    tri.sort((a,b)=>{
-      const pa=precisionDe(a), pb=precisionDe(b);
-      if(pa==null && pb==null) return b.xp-a.xp;
-      if(pa==null) return 1; if(pb==null) return -1;
-      return pb-pa || b.xp-a.xp;
-    });
-  }
-  const val = u => metric==='prec'
-    ? (precisionDe(u)!=null ? precisionDe(u)+' %' : '—')
-    : '+'+fmt(u.xp)+' XP';
-  const rows = tri.slice(0,5).map((u,i)=>`
-    <div class="lbrow r${i+1}${moi && u.pseudo===moi.pseudo && u.xp===moi.xp ? ' me':''}">
-      <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}</div>
-      <div class="pt">${val(u)} ${SPARK}</div>
-    </div>`).join('');
 
-  const monRang = metric==='prec'
-    ? tri.findIndex(u=>moi && u.pseudo===moi.pseudo && u.xp===moi.xp)+1
-    : rang;
-  const maVal = metric==='prec'
-    ? (precisionDe(G.prof)!=null ? precisionDe(G.prof)+' % de bonnes décisions'
-       : 'encore '+(MIN_DECISIONS-(G.prof.rounds||0))+' décisions avant d’être classé')
-    : fmt(G.prof.xp)+' XP';
-  const rank = `<div class="lbme">TON RANG : ${monRang>0?'#'+monRang:'non classé'} · ${maVal}</div>`;
+const MESURES = {
+  argent: {nom:'ARGENT',
+    val: u => dollars(u.cash!=null?u.cash:CAPITAL_DEPART),
+    tri: (a,b) => (b.cash||0)-(a.cash||0),
+    phrase:'Ce qu’il reste dans le portefeuille aujourd’hui. Tout le monde a commencé avec 10 000 $.'},
+  gain:   {nom:'GAIN',
+    val: u => (gainDe(u)>=0?'+':'−')+'$'+fmt(Math.abs(gainDe(u))),
+    tri: (a,b) => gainDe(b)-gainDe(a),
+    phrase:'Tout ce que le joueur a gagné ou perdu depuis son tout premier cycle, remises à zéro comprises.'},
+  decisions:{nom:'DÉCISIONS',
+    val: u => precisionDe(u)!=null ? precisionDe(u)+' %' : '—',
+    tri: (a,b) => { const pa=precisionDe(a),pb=precisionDe(b);
+      if(pa==null&&pb==null) return b.xp-a.xp;
+      if(pa==null) return 1; if(pb==null) return -1; return pb-pa; },
+    phrase:'Sur 100 décisions prises, combien étaient posées dans la bonne zone du cycle. Compté à partir de '+MIN_DECISIONS+' décisions.'}
+};
 
-  const onglets = `<div class="lbtabs">
-      <b data-k="xp" class="${metric==='xp'?'on':''}">XP</b>
-      <b data-k="prec" class="${metric==='prec'?'on':''}">PRÉCISION</b></div>`;
-  const legende = metric==='prec'
-    ? '<p class="note" style="text-align:center;margin-top:6px">Part de tes décisions posées dans la bonne zone du cycle. À partir de '+MIN_DECISIONS+' décisions.</p>'
-    : '<p class="note" style="text-align:center;margin-top:6px">L’XP récompense le temps de jeu. La précision, la qualité des décisions.</p>';
-  const dem = demo?'<p class="note" style="text-align:center;margin-top:8px">Classement de démonstration : crée un compte pour être classé face aux vrais joueurs.</p>':'';
-  return onglets+`<div class="lbwrap"><div class="lbstack">${rows}</div></div>`+rank+legende+dem;
+function badgeRuines(u){
+  const r = u.ruines||0;
+  return r ? `<span class="ruine" title="a tout perdu ${r} fois">${r} RUINE${r>1?'S':''}</span>` : '';
 }
 
-/* --- animation de montée de niveau --- */
+function leaderboard(list, rang, demo, moi, mesure, tout){
+  mesure = MESURES[mesure] ? mesure : 'argent';
+  const M = MESURES[mesure];
+  const tri = list.slice().sort(M.tri);
+  const estMoi = u => moi && u.pseudo===moi.pseudo && u.xp===moi.xp;
+
+  const pill = (u,i)=>`
+    <div class="lbrow r${i+1}${estMoi(u)?' me':''}">
+      <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
+      <div class="nm">${u.pseudo}${badgeRuines(u)}</div>
+      <div class="pt">${M.val(u)} ${SPARK}</div>
+    </div>`;
+  const ligne = (u,i)=>`
+    <div class="lbline${estMoi(u)?' me':''}">
+      <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
+      <div class="nm">${u.pseudo}${badgeRuines(u)}</div>
+      <div class="pt">${M.val(u)}</div>
+    </div>`;
+
+  const corps = tout
+    ? `<div class="lblist">${tri.slice(0,20).map(ligne).join('')}</div>`
+    : `<div class="lbwrap"><div class="lbstack">${tri.slice(0,5).map(pill).join('')}</div></div>`;
+
+  const monRang = tri.findIndex(estMoi)+1;
+  const maVal = M.val(G.prof);
+  const onglets = `<div class="lbtabs">` +
+    Object.keys(MESURES).map(k=>`<b data-k="${k}" class="${k===mesure?'on':''}">${MESURES[k].nom}</b>`).join('') +
+    `</div>`;
+  const bouton = `<button class="lbmore" id="b-lbmore">${tout?'RÉDUIRE':'VOIR TOUT LE CLASSEMENT'}</button>`;
+  const rank = `<div class="lbme">TON RANG : ${monRang>0?'#'+monRang:'non classé'} · ${maVal}</div>`;
+  const dem = demo?expl('Classement de démonstration. Crée un compte pour être classé face aux vrais joueurs.'):'';
+  return onglets + corps + rank + bouton + expl(M.phrase) + dem;
+}
+
+/* --- montée de niveau --- */
 function levelUpAnim(n){
   Audio_.play('levelup');
   const el=$('#levelup'); $('#lu-n').textContent=n;
@@ -91,36 +112,43 @@ function levelUpAnim(n){
   setTimeout(()=>el.classList.remove('on'), 2600);
 }
 
-/* --- courbe de calibration : progression des scores dans le temps --- */
+/* --- courbe : l'argent du portefeuille dans le temps --- */
 function calibCanvas(){
   setTimeout(()=>{
     const c=document.getElementById('calib'); if(!c) return;
     const dpr=Math.min(devicePixelRatio||1,2.5), r=c.getBoundingClientRect();
     c.width=r.width*dpr; c.height=r.height*dpr;
     const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
-    const H=r.height,W=r.width, d=G.hist.slice(-24);
+    const H=r.height,W=r.width;
+    const d=G.hist.slice(-24).filter(v=>v.cash!=null);
     x.clearRect(0,0,W,H);
-    if(d.length<1){ x.fillStyle='#5b626e'; x.font='12px sans-serif'; x.textAlign='center';
-      x.fillText('Joue quelques parties pour voir ta courbe', W/2, H/2); return; }
-    const lo=Math.min(-6,...d.map(v=>v.score)), hi=Math.max(14,...d.map(v=>v.score));
+    if(d.length<1){ x.fillStyle='#5b626e'; x.font='13px sans-serif'; x.textAlign='center';
+      x.fillText('Joue quelques cycles pour voir ta courbe', W/2, H/2); return; }
+    const vals=[CAPITAL_DEPART,...d.map(v=>v.cash)];
+    const lo=Math.min(...vals)*.92, hi=Math.max(...vals)*1.08;
     const px=i=> d.length===1? W/2 : 14+i*(W-28)/(d.length-1);
-    const py=v=> H-16-((v-lo)/(hi-lo))*(H-30);
-    x.strokeStyle='#242832'; x.lineWidth=1;
-    [0].forEach(v=>{ const y=py(v)+.5; x.beginPath(); x.moveTo(0,y); x.lineTo(W,y); x.stroke(); });
+    const py=v=> H-18-((v-lo)/(hi-lo))*(H-32);
+    const y0=py(CAPITAL_DEPART)+.5;
+    x.strokeStyle='#2a2f39'; x.setLineDash([4,4]); x.lineWidth=1;
+    x.beginPath(); x.moveTo(0,y0); x.lineTo(W,y0); x.stroke(); x.setLineDash([]);
+    x.fillStyle='#5b626e'; x.font='10px ui-monospace,monospace'; x.textAlign='left';
+    x.fillText('10 000 $', 4, y0-6);
     x.strokeStyle='#f5a524'; x.lineWidth=2; x.beginPath();
-    d.forEach((v,i)=> i? x.lineTo(px(i),py(v.score)) : x.moveTo(px(i),py(v.score)));
+    d.forEach((v,i)=> i? x.lineTo(px(i),py(v.cash)) : x.moveTo(px(i),py(v.cash)));
     x.stroke();
-    d.forEach((v,i)=>{ x.fillStyle = v.score>=12?'#16c784':v.score>=5?'#f5a524':v.score>=0?'#868d9a':'#ea3943';
-      x.beginPath(); x.arc(px(i),py(v.score),3.4,0,7); x.fill(); });
+    d.forEach((v,i)=>{ x.fillStyle = v.ruine?'#ea3943':(v.gain>=0?'#16c784':'#868d9a');
+      x.beginPath(); x.arc(px(i),py(v.cash),3.6,0,7); x.fill(); });
   },30);
 }
 
-/* --- bilan du mode SIMPLE : pictogrammes, un actif, deux dates, un chiffre --- */
+/* ============================================================
+   BILAN — version SIMPLE
+   ============================================================ */
 function renderResultSimple(R){
-  const {sc,ser,last,buys,pru,zPru,score,valeur,xpGain}=R;
+  const {sc,ser,buys,pru,zPru,score,valeur,xpGain,avant,gainCycle,ruine}=R;
   const n = score>=12?5 : score>=8?4 : score>=5?3 : score>=0?2 : 1;
   const pastilles = Array.from({length:5},(_,i)=>`<s class="${i<n?'on':''}"></s>`).join('');
-  const perf = (valeur/CAPITAL_INIT - 1) * 100;
+  const perf = avant>0 ? (gainCycle/avant*100) : 0;
   const sousSommet = pru!=null ? Math.max(0, Math.round((1-pru/sc.pPk0)*100)) : null;
   const an = i => ser.dates[i].slice(0,4);
 
@@ -129,17 +157,31 @@ function renderResultSimple(R){
     <div class="pastilles">${pastilles}</div>
     <div class="asset">${ser.nom}</div>
     <div class="years">${an(sc.decs[0])} → ${an(sc.end)}<span style="opacity:.45"> · creux ${an(sc.tr)}</span></div>
+
     <div class="mult" style="color:${perf>=0?'#5fe8b6':'#ff9098'}">${perf>=0?'+':'−'}${Math.abs(perf).toFixed(0)} %</div>
-    <div class="xp">+${xpGain} XP</div>
-    <div class="mini">
-      <div><u>🪙</u><b>${buys.length}</b></div>
-      ${sousSommet!=null?`<div><u>📉</u><b>−${sousSommet}%</b></div>`:''}
+    <div class="xp">${gainCycle>=0?'+':'−'}$${fmt(Math.abs(gainCycle))} sur ce cycle</div>
+
+    ${ruine ? `<div class="ruinebox">TU AS TOUT PERDU<span>portefeuille remis à 10 000 $ · ${G.prof.ruines} ruine${G.prof.ruines>1?'s':''} au total</span></div>` : ''}
+
+    <div class="wallet">
+      <u>TON PORTEFEUILLE</u>
+      <b>${dollars(G.prof.cash)}</b>
     </div>
-    <div style="width:100%;margin-top:24px">${missionBar()}</div>
-    <button class="bigbtn" id="b-again">▶</button>
+
+    <div class="mini">
+      <div><u>PALIERS</u><b>${buys.length}</b></div>
+      ${sousSommet!=null?`<div><u>ACHAT MOYEN</u><b>−${sousSommet}%</b></div>`:''}
+      <div><u>GAGNÉ</u><b>+${xpGain} XP</b></div>
+    </div>
+    ${expl(sousSommet!=null
+      ? `Tu as acheté en moyenne ${sousSommet} % sous le sommet précédent. Plus ce chiffre est grand, mieux c’est.`
+      : `Tu n’as posé aucun palier sur ce cycle.`)}
+
+    <div style="width:100%;margin-top:22px">${missionBar()}</div>
+    <button class="bigbtn" id="b-again">REJOUER</button>
     <div class="row2">
-      <button class="roundbtn" id="b-seechart">📈</button>
-      <button class="roundbtn" id="b-prof">🏆</button>
+      <button class="wordbtn" id="b-seechart">VOIR LE GRAPHIQUE</button>
+      <button class="wordbtn" id="b-prof">CLASSEMENT</button>
     </div>
   </div>`;
   brancherBilan(sc);
@@ -152,17 +194,20 @@ function brancherBilan(sc){
   $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
 }
 
-/* --- écran de bilan --- */
+/* ============================================================
+   BILAN — version PRO
+   ============================================================ */
 function renderResult(R){
   if(G.mode==='simple') return renderResultSimple(R);
-  const {sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur,bh,xpGain,bons}=R;
+  const {sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur,bh,xpGain,bons,
+         avant,gainCycle,ruine,diff}=R;
   const v = verdictGlobal(score);
   const d0 = ser.dates[sc.decs[0]], d1 = ser.dates[sc.end];
   const isBTC = sc.a==='BTC';
 
   const ligne = a => {
-    const lbl = a.type==='buy'?'Palier '+Math.round(a.pct*100)+'%'
-             : a.type==='sell'?'Profits '+Math.round(a.pct*100)+'%' : 'Attente';
+    const lbl = a.type==='buy'?'Achat '+Math.round(a.pct*100)+'%'
+             : a.type==='sell'?'Encaissé '+Math.round(a.pct*100)+'%' : 'Attente';
     return `<div class="kv"><span style="display:flex;flex-direction:column;gap:3px">
       <span>${lbl} <span style="color:var(--dim)">· ${dateFr(a.date)}</span></span>
       <span class="note">${a.g.d}</span></span>
@@ -175,59 +220,67 @@ function renderResult(R){
     const ath = athAt(a.i), dd = 1 - a.price/ath, ma = ser.ma200[a.i];
     const h = isBTC ? halvingInfo(a.date) : null;
     return `<div class="kv"><span>${dateFr(a.date)}</span>
-      <b style="font-size:11.5px;text-align:right">−${(dd*100).toFixed(0)}% sous l’ATH${
-        ma?` · ${a.price>=ma?'+':''}${((a.price/ma-1)*100).toFixed(0).replace("-","−")}% vs MM200`:''}${
+      <b style="font-size:11.5px;text-align:right">−${(dd*100).toFixed(0)}% sous le sommet${
+        ma?` · ${a.price>=ma?'+':'−'}${Math.abs((a.price/ma-1)*100).toFixed(0)}% vs MM200`:''}${
         h&&h.joursDepuis!=null?` · J+${h.joursDepuis} après halving`:''}</b></div>`;
   }).join('') || '<p class="note">Aucun palier posé sur ce cycle.</p>';
 
   $('#res-body').innerHTML = `
     <div style="text-align:center;margin-bottom:6px">
-      <div style="font-size:10.5px;letter-spacing:.22em;color:var(--gold);font-weight:800">REVEAL</div>
+      <div style="font-size:10.5px;letter-spacing:.22em;color:var(--gold);font-weight:800">RÉSULTAT</div>
       <h1 style="margin:8px 0 2px">${ser.nom}</h1>
-      <div class="note" style="font-size:13px">${dateFr(d0)} → ${dateFr(d1)} · repli du cycle : −${sc.dd} %</div>
+      <div class="note" style="font-size:13px">${dateFr(d0)} → ${dateFr(d1)} · repli du cycle : −${sc.dd} %
+      · difficulté ×${String(diff).replace('.',',')}</div>
     </div>
-    <div style="text-align:center;margin:20px 0">
+
+    <div class="walletbig">
+      <u>TON PORTEFEUILLE</u>
+      <b>${dollars(G.prof.cash)}</b>
+      <i style="color:${gainCycle>=0?'#5fe8b6':'#ff9098'}">${gainCycle>=0?'+':'−'}$${fmt(Math.abs(gainCycle))} sur ce cycle
+        (${gainCycle>=0?'+':'−'}${Math.abs(gainCycle/avant*100).toFixed(0)} %)</i>
+    </div>
+    ${ruine ? `<div class="ruinebox">TU AS TOUT PERDU<span>portefeuille remis à 10 000 $ · ${G.prof.ruines} ruine${G.prof.ruines>1?'s':''} au total</span></div>` : ''}
+    ${expl('Ton portefeuille repart de là au prochain cycle. Il ne se remet à 10 000 $ que si tu perds tout.')}
+
+    <div style="text-align:center;margin:22px 0">
       <span class="tag ${v.k}" style="font-size:12px;padding:7px 13px">${v.t}</span>
       <div class="num" style="font-size:44px;font-weight:800;margin-top:12px">${score>0?'+':''}${score}</div>
-      <div class="note">points de zone · record : ${G.prof.best}</div>
+      <div class="note">points de méthode · record : ${G.prof.best}</div>
     </div>
+    ${expl('Les points notent la <b>méthode</b>, pas la chance : acheter dans la bonne zone du cycle et fractionner. On peut gagner de l’argent avec une mauvaise note, et l’inverse.')}
 
     ${missionBar()}
 
     <h2>Prix de revient</h2>
-    <div class="kv"><span>PRU sur ${buys.length} palier${buys.length>1?'s':''}</span>
+    <div class="kv"><span>Prix moyen d’achat sur ${buys.length} palier${buys.length>1?'s':''}</span>
       <b>${pru!=null?fmt2(pru):'—'}</b></div>
-    <div class="kv"><span>Zone du PRU dans le cycle</span>
+    <div class="kv"><span>Zone du prix moyen dans le cycle</span>
       <b>${zPru!=null?Math.round(clamp(zPru,0,1.4)*100)+' %':'—'} ${zPru!=null?'<span class="tag '+gradeBuy(zPru).k+'">'+gradeBuy(zPru).t+'</span>':''}</b></div>
     <div class="kv"><span>Creux réel du cycle</span><b>${fmt2(sc.pTr)} · ${dateFr(ser.dates[sc.tr])}</b></div>
     <div class="kv"><span>Sommet précédent / suivant</span><b>${fmt2(sc.pPk0)} → ${fmt2(sc.pPk1)}</b></div>
-    <p class="note" style="margin-top:10px">Le creux exact n’était atteignable qu’une seule semaine sur ${sc.end-sc.start}.
-    C’est pour ça qu’on joue la zone, pas le point.</p>
+    ${expl(`Le creux exact n’était atteignable qu’une seule semaine sur ${sc.end-sc.start}. C’est pour ça qu’on joue la zone, pas le point.`)}
 
     <h2>Décision par décision</h2>${G.actions.map(ligne).join('')}
 
     <h2>Comportement</h2>
-    ${bonus.length? bonus.map(b=>`<div class="kv"><span>${b[1]}</span><b class="${b[0][0]==='+'?'':''}" style="color:${b[0][0]==='+'?'#5fe8b6':'#ff9098'}">${b[0]}</b></div>`).join('')
+    ${bonus.length? bonus.map(b=>`<div class="kv"><span>${b[1]}</span><b style="color:${b[0][0]==='+'?'#5fe8b6':'#ff9098'}">${b[0]}</b></div>`).join('')
       : '<p class="note">Aucun bonus ni malus de comportement.</p>'}
 
     <h2>Contexte au moment de tes achats</h2>${infos}
 
-    <h2>Performance (information, pas score)</h2>
-    <div class="kv"><span>Capital final</span><b>${fmt(valeur)} €
-      <span style="color:${valeur>=CAPITAL_INIT?'#5fe8b6':'#ff9098'}">(${valeur>=CAPITAL_INIT?'+':'−'}${Math.abs(valeur/CAPITAL_INIT*100-100).toFixed(0)} %)</span></b></div>
-    <div class="kv"><span>Si tu avais tout mis dès la 1ʳᵉ manche</span><b>${fmt(bh)} €
-      <span style="color:var(--dim)">(${bh>=CAPITAL_INIT?'+':'−'}${Math.abs(bh/CAPITAL_INIT*100-100).toFixed(0)} %)</span></b></div>
-    <p class="note" style="margin-top:10px">Sur un seul cycle, le tout-d’un-coup peut battre les paliers.
-    Sur 20 cycles, il te sort du marché une fois sur deux. Le score note la méthode, pas la chance.</p>
+    <h2>Comparaison</h2>
+    <div class="kv"><span>Ton résultat</span><b>${dollars(valeur)}</b></div>
+    <div class="kv"><span>Si tu avais tout mis dès la 1ʳᵉ manche</span><b>${dollars(bh)}</b></div>
+    ${expl('Sur un seul cycle, le tout-d’un-coup peut battre les paliers. Sur vingt cycles, il te sort du marché une fois sur deux.')}
 
     <h2>Progression</h2>
     <div class="kv"><span>XP gagnés</span><b style="color:var(--gold2)">+${xpGain}</b></div>
-    <div class="kv"><span>Manches bien jouées</span><b>${bons} / ${G.actions.length}</b></div>
+    <div class="kv"><span>Décisions bien jouées</span><b>${bons} / ${G.actions.length}</b></div>
     <div class="kv"><span>Niveau</span><b>${G.prof.level}</b></div>
+    ${expl('Les XP tiennent compte de la difficulté de l’actif : un cycle crypto rapporte plus qu’un indice, parce qu’il est bien plus dur à lire.')}
 
-    <button class="btn" id="b-again">Nouveau cycle</button>
-    <button class="btn ghost" id="b-seechart">Revoir le cycle complet</button>
-    <button class="btn ghost" id="b-prof">Classement &amp; progression</button>`;
-
+    <button class="btn" id="b-again">REJOUER</button>
+    <button class="btn ghost" id="b-seechart">VOIR LE GRAPHIQUE COMPLET</button>
+    <button class="btn ghost" id="b-prof">CLASSEMENT ET PROGRESSION</button>`;
   brancherBilan(sc);
 }

@@ -48,11 +48,19 @@ const Cloud = (() => {
     G.prof = {pseudo:p.pseudo, avatar:p.avatar||null, level:p.level, xp:p.xp, best:+p.best_score,
               missions:p.rounds_played,                 // décisions bien jouées (pilote les niveaux)
               rounds:p.total_calls || 0,                // décisions au total (0 = pas encore mesuré)
-              sessions:p.sessions_played};
+              sessions:p.sessions_played,
+              cash:p.cash!=null ? +p.cash : CAPITAL_DEPART,
+              ruines:p.ruines||0};
     // l'historique des scores sert à la courbe de calibration
     const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+uid+'&select=*&order=created_at.asc&limit=60');
-    G.hist = (s||[]).map(x=>({t:new Date(x.created_at).getTime(), id:x.scenario_id, a:x.asset,
-      score:+x.score, bons:0, xp:x.xp_gained, n:x.paliers}));
+    let prec = CAPITAL_DEPART;
+    G.hist = (s||[]).map(x=>{
+      const cash = x.cash_after!=null ? +x.cash_after : null;
+      const gain = cash!=null ? cash-prec : 0;
+      if(cash!=null) prec = cash;
+      return {t:new Date(x.created_at).getTime(), id:x.scenario_id, a:x.asset,
+        score:+x.score, bons:0, xp:x.xp_gained, n:x.paliers, cash, gain};
+    });
     saveLocal();
   }
 
@@ -63,39 +71,37 @@ const Cloud = (() => {
       await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH',
         body:JSON.stringify({level:G.prof.level, xp:G.prof.xp, best_score:Math.round(G.prof.best),
           rounds_played:G.prof.missions, total_calls:G.prof.rounds,
-          sessions_played:G.prof.sessions, updated_at:new Date().toISOString()})});
+          sessions_played:G.prof.sessions, cash:Math.round(G.prof.cash), ruines:G.prof.ruines,
+          updated_at:new Date().toISOString()})});
       await api('/rest/v1/cyc_sessions', {method:'POST', body:JSON.stringify({
         user_id:G.user.id, scenario_id:rec.id, asset:rec.a, score:Math.round(rec.score),
         grade:verdictGlobal(rec.score).k, avg_zone:rec.zPru!=null?Number(rec.zPru.toFixed(4)):null,
-        paliers:detail.buys, xp_gained:rec.xp, detail:detail})});
+        paliers:detail.buys, xp_gained:rec.xp, cash_after:Math.round(rec.cash),
+        marche:NOM_MARCHE(G.marche), detail:detail})});
     }catch(e){ console.warn('sync', e.message); }
   }
 
-  const DEMO = [{pseudo:'Anna',xp:12400,level:9,missions:214,rounds:248},
-                {pseudo:'Sam',xp:8600,level:7,missions:139,rounds:181},
-                {pseudo:'Nariman',xp:5100,level:5,missions:78,rounds:112},
-                {pseudo:'Caleb',xp:2450,level:3,missions:31,rounds:60},
-                {pseudo:'Iris',xp:1200,level:2,missions:12,rounds:29}];
+  const DEMO = [{pseudo:'Anna',xp:12400,level:9,missions:214,rounds:248,cash:31200,ruines:0},
+                {pseudo:'Sam',xp:8600,level:7,missions:139,rounds:181,cash:18400,ruines:1},
+                {pseudo:'Nariman',xp:5100,level:5,missions:78,rounds:112,cash:12750,ruines:0},
+                {pseudo:'Caleb',xp:2450,level:3,missions:31,rounds:60,cash:6300,ruines:2},
+                {pseudo:'Iris',xp:1200,level:2,missions:12,rounds:29,cash:9100,ruines:0}];
   async function leaderboard(){
     if(G.token && G.sbUp!==false){
       try{
-        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls&order=xp.desc&limit=30', {});
-        (rows||[]).forEach(r=>{ r.missions=r.rounds_played; r.rounds=r.total_calls||0; });
+        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls,cash,ruines&order=cash.desc&limit=40', {});
+        (rows||[]).forEach(r=>{ r.missions=r.rounds_played; r.rounds=r.total_calls||0;
+          r.cash = r.cash!=null ? +r.cash : CAPITAL_DEPART; r.ruines = r.ruines||0; });
         if(rows && rows.length){
-          // rang calculé côté serveur : robuste même si deux joueurs ont le même pseudo
-          let rank = 0;
-          try{
-            const r = await fetch(SB_URL+'/rest/v1/cyc_profiles?select=id&xp=gt.'+G.prof.xp,
-              {method:'HEAD', headers:{...H(), 'Prefer':'count=exact'}});
-            const cr = r.headers.get('content-range');            // format "*/12"
-            if(cr) rank = parseInt(cr.split('/')[1],10) + 1;
-          }catch(e){}
-          return {list:rows, rank, moi:{pseudo:G.prof.pseudo, xp:G.prof.xp}};
+          return {list:rows, rank:0, moi:{pseudo:G.prof.pseudo, xp:G.prof.xp,
+                  cash:G.prof.cash, ruines:G.prof.ruines,
+                  missions:G.prof.missions, rounds:G.prof.rounds}};
         }
       }catch(e){ console.warn('lb', e.message); }
     }
     const moi = {pseudo:G.prof.pseudo, xp:G.prof.xp, level:G.prof.level, avatar:G.prof.avatar,
-                 missions:G.prof.missions, rounds:G.prof.rounds};
+                 missions:G.prof.missions, rounds:G.prof.rounds,
+                 cash:G.prof.cash, ruines:G.prof.ruines};
     const list = [...DEMO, moi].sort((a,b)=>b.xp-a.xp);
     return {list, rank:list.indexOf(moi)+1, demo:true, moi};
   }
@@ -140,8 +146,22 @@ const Cloud = (() => {
     await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH', body:JSON.stringify(body)});
   }
 
+  // abonnement aux rappels quotidiens
+  async function savePush(s){
+    if(!G.user && G.token) await restore();
+    if(!G.user) throw new Error('Session expirée, reconnecte-toi.');
+    await api('/rest/v1/cyc_push', {method:'POST',
+      headers:{'Prefer':'resolution=merge-duplicates'},
+      body:JSON.stringify({user_id:G.user.id, endpoint:s.endpoint,
+        p256dh:s.p256dh, auth:s.auth, pseudo:G.prof.pseudo})});
+  }
+  async function removePush(endpoint){
+    if(!G.user) return;
+    await api('/rest/v1/cyc_push?endpoint=eq.'+encodeURIComponent(endpoint), {method:'DELETE'});
+  }
+
   return {
-    ping, saveProfil,
+    ping, saveProfil, savePush, removePush,
     signup: async (m,p,ps)=>{ const j=await auth('signup',{email:m,password:p,data:{pseudo:ps}});
       if(!j.access_token && j.id){ const k=await auth('token?grant_type=password',{email:m,password:p});
         return afterAuth(k,ps); } return afterAuth(j,ps); },

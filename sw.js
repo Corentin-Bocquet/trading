@@ -3,14 +3,15 @@
    installée sur l'écran d'accueil. Incrémente CACHE à chaque
    modification de fichier pour forcer la mise à jour.
    ============================================================ */
-const CACHE = 'trading-v5';
+const CACHE = 'trading-v6';
 const SHELL = [
   'index.html','login.html','signup.html','app.html','profil.html',
   'manifest.webmanifest',
   'assets/css/style.css',
-  'assets/js/core.js','assets/js/audio.js','assets/js/data.js','assets/js/score.js',
+  'assets/js/core.js','assets/js/audio.js','assets/js/score.js','assets/data/catalogue.js',
   'assets/js/cloud.js','assets/js/chart.js','assets/js/game.js','assets/js/ui.js',
   'assets/js/app.js','assets/js/home.js','assets/js/auth.js','assets/js/profil.js',
+  'assets/js/notif.js',
   'assets/sounds/swipe.mp3','assets/sounds/coin.mp3','assets/sounds/zoom.mp3',
   'assets/sounds/whoosh.mp3','assets/sounds/win.mp3','assets/sounds/fail.mp3',
   'assets/sounds/levelup.mp3','assets/sounds/sell.mp3','assets/sounds/click.mp3',
@@ -37,4 +38,25 @@ self.addEventListener('fetch', e=>{
       return res;
     }).catch(()=>caches.match('index.html')))
   );
+});
+
+/* ---------- rappel quotidien ---------- */
+self.addEventListener('push', e=>{
+  let d = {titre:'Trading', texte:'Un cycle t’attend.'};
+  try{ if(e.data) d = Object.assign(d, e.data.json()); }catch(err){}
+  e.waitUntil(self.registration.showNotification(d.titre, {
+    body: d.texte,
+    icon: 'assets/icons/icon-192.png',
+    badge: 'assets/icons/icon-192.png',
+    tag: 'rappel-quotidien',
+    data: {url:'app.html'}
+  }));
+});
+self.addEventListener('notificationclick', e=>{
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || 'index.html';
+  e.waitUntil(clients.matchAll({type:'window', includeUncontrolled:true}).then(list=>{
+    for(const c of list){ if('focus' in c) return c.navigate(url).then(()=>c.focus()); }
+    return clients.openWindow(url);
+  }));
 });
