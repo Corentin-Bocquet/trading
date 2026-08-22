@@ -36,6 +36,7 @@ const MISSIONS_PAR_NIVEAU = 7;
 const G = {
   user:null, offline:false, token:null, sbUp:null,
   mode:'simple',              // 'simple' (gestuel, sans texte) ou 'pro' (dense, chiffré)
+  gateOn:true,                // obligation de dézoomer avant de décider
   prof:{pseudo:'Toi', avatar:null, level:1, xp:0, best:0, missions:0, rounds:0, sessions:0},
   hist:[],
   sc:null, ser:null,
@@ -62,6 +63,7 @@ function saveLocal(){
     localStorage.setItem('cyc_prof', JSON.stringify(G.prof));
     localStorage.setItem('cyc_hist', JSON.stringify(G.hist.slice(-60)));
     localStorage.setItem('cyc_mode', G.mode);
+    localStorage.setItem('cyc_gate', G.gateOn?'1':'0');
   }catch(e){}
 }
 function loadLocal(){
@@ -73,6 +75,7 @@ function loadLocal(){
     // un nouveau venu démarre en mode simple ; un habitué garde son dernier choix
     const m = localStorage.getItem('cyc_mode');
     G.mode = m || (G.prof.sessions>0 ? 'pro' : 'simple');
+    G.gateOn = localStorage.getItem('cyc_gate') !== '0';
   }catch(e){}
   if(G.prof.missions==null) G.prof.missions=0;
 }

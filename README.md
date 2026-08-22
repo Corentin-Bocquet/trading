@@ -39,6 +39,19 @@ Le classement bascule entre deux colonnes :
   affichée à partir de 20 décisions. C'est la mesure de qualité : elle ne
   monte pas parce qu'on joue beaucoup, mais parce qu'on se trompe moins.
 
+## Obligation de dézoomer
+
+Par défaut, la décision reste bloquée tant que le joueur n'a pas pris assez de
+recul sur le cycle. La consigne est affichée explicitement : une bulle rouge
+pointe le bouton de dézoom (qui clignote), et la carte elle-même affiche
+« DÉZOOME D'ABORD » au lieu des actions. Un geste tenté trop tôt fait vibrer la
+carte plutôt que de ne rien faire.
+
+Le réglage se désactive depuis la page profil, section **Réglages**.
+Désactivé, la décision est disponible dès la première seconde et aucune consigne
+n'apparaît. C'est plus rapide, mais c'est aussi le garde-fou qui fait tout
+l'intérêt de l'exercice qui saute.
+
 ## Compte obligatoire
 
 Il n'y a pas de mode invité : sans compte, `app.html` et `profil.html` renvoient

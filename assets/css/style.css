@@ -371,3 +371,47 @@ a.btn{text-decoration:none;text-align:center;display:block}
 .prow span{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .phead .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .swrow{display:flex;justify-content:center;margin-bottom:18px}
+
+/* ============================================================
+   CONSIGNE DE DÉZOOM : explicite, placée à côté du bouton concerné
+   ============================================================ */
+.gate{max-width:82%;text-align:left;line-height:1.35}
+.gate.top{bottom:auto;top:92px;left:10px;transform:none}
+.gate.top.hide{transform:translateY(-8px)}
+.gate:after{content:"";position:absolute;width:0;height:0;border:7px solid transparent}
+.gate.top:after{top:-14px;left:28px;border-bottom-color:rgba(234,57,67,.4)}
+.gate.ok.top:after{border-bottom-color:rgba(22,199,132,.35)}
+.gate.bottom:after{bottom:-14px;left:calc(50% - 32px);border-top-color:rgba(234,57,67,.4)}
+.gate.ok.bottom:after{border-top-color:rgba(22,199,132,.35)}
+.gate.beat{animation:beat .45s}
+@keyframes beat{0%,100%{transform:scale(1)}35%{transform:scale(1.07)}}
+.gate.bottom.beat{animation:beatx .45s}
+@keyframes beatx{0%,100%{transform:translateX(-50%) scale(1)}35%{transform:translateX(-50%) scale(1.07)}}
+
+/* mode simple : la consigne se pose juste au-dessus des boutons de zoom */
+.simple .gate{top:auto;bottom:66px;left:50%;transform:translateX(-50%);
+  background:rgba(234,57,67,.14);border:1px solid rgba(234,57,67,.45);backdrop-filter:blur(8px);
+  padding:9px 14px;font-size:13px;text-align:center}
+.simple .gate.ok{background:rgba(22,199,132,.12);border-color:rgba(22,199,132,.4)}
+.simple .gate span:last-child{display:inline}
+.simple .gate span:first-child{font-size:19px;animation:none;filter:none}
+.simple .gate.hide{transform:translate(-50%,8px)}
+
+/* carte refusée tant que le recul n'est pas pris */
+.card.nope{animation:nope .42s}
+@keyframes nope{0%,100%{transform:translateX(0)}18%{transform:translateX(-10px)}
+  38%{transform:translateX(10px)}58%{transform:translateX(-7px)}78%{transform:translateX(7px)}}
+.card.locked{opacity:.62}
+.lockface{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:800;letter-spacing:.04em;color:#ff9098}
+.lockface b{font-size:24px}
+.simple .lockface{font-size:16px}
+.simple .lockface b{font-size:34px}
+@media (prefers-reduced-motion:reduce){.card.nope,.gate.beat,.gate.bottom.beat{animation:none}}
+
+/* interrupteur de réglage */
+.sw{width:50px;height:29px;border-radius:999px;background:#2b303a;position:relative;
+  border:1px solid var(--line);flex:0 0 auto;transition:.22s}
+.sw i{position:absolute;top:2px;left:2px;width:23px;height:23px;border-radius:50%;
+  background:#8b919c;transition:.22s;display:block}
+.sw.on{background:linear-gradient(150deg,#ffd34d,#f5a524);border-color:transparent}
+.sw.on i{left:23px;background:#3a2600}

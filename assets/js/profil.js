@@ -104,6 +104,13 @@
     $('#e-save').textContent = 'Enregistrer';
   };
 
+  /* ---------- réglages ---------- */
+  const sw = $('#s-gate');
+  function peindre(){ sw.classList.toggle('on', G.gateOn);
+    sw.setAttribute('aria-checked', G.gateOn?'true':'false'); }
+  peindre();
+  sw.onclick = ()=>{ G.gateOn = !G.gateOn; saveLocal(); peindre(); Audio_.play('click'); };
+
   /* ---------- historique des parties ---------- */
   $('#p-hist').innerHTML = G.hist.slice().reverse().slice(0,15).map(h=>{
     const v = verdictGlobal(h.score);

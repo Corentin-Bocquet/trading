@@ -31,7 +31,8 @@ function setupRound(){
   G.reqSpan = Math.min(avail, Math.max(140, Math.floor(avail*0.7)));
   G.view.span = Math.min(avail, 62);          // on démarre volontairement zoomé
   G.view.scale = (G.ser.ohlc[G.decIdx][3] / G.ser.ohlc[sc.start][3] > 4) ? 'log' : 'lin';
-  G.gateOK = false; G.maxSpanSeen = G.view.span;
+  G.gateOK = !G.gateOn;                 // réglage désactivé : on décide tout de suite
+  G.maxSpanSeen = G.view.span;
   $('#t-round').textContent = 'MANCHE '+(G.round+1)+' / '+sc.decs.length;
   updateGate(); updateHUD(); Chart.resize(); Chart.draw(); resetCard();
   Audio_.play('whoosh');
@@ -80,21 +81,41 @@ function updateGate(){
   $('#t-span').textContent = an>=1.6 ? an.toFixed(1).replace('.',',')+' ANS'
               : an>=0.95 ? '1 AN' : Math.round(sp/4.33)+' MOIS';
   $('#b-scale').textContent = G.view.scale==='log' ? 'LOG' : 'LIN';
-  if(G.maxSpanSeen >= G.reqSpan) G.gateOK = true;
-  const g = $('#gate');
-  const ico = g.firstElementChild;
-  if(G.gateOK){
+  if(!G.gateOn || G.maxSpanSeen >= G.reqSpan) G.gateOK = true;
+
+  const g = $('#gate'), ico = g.firstElementChild;
+  // la consigne se place à côté du bouton qui la résout
+  g.classList.toggle('top', G.mode!=='simple');
+  g.classList.toggle('bottom', G.mode==='simple');
+
+  if(!G.gateOn){                          // réglage désactivé : aucune consigne
+    g.classList.add('hide');
+  }else if(G.gateOK){
     g.classList.add('ok'); ico.textContent = '🔓';
     $('#b-zout').classList.remove('pulse');
-    $('#gatetxt').textContent = 'Recul pris · décision débloquée';
-    clearTimeout(G._gt); G._gt = setTimeout(()=>g.classList.add('hide'), 1400);
+    $('#gatetxt').textContent = 'Recul pris, tu peux décider';
+    clearTimeout(G._gt); G._gt = setTimeout(()=>g.classList.add('hide'), 1600);
   }else{
     g.classList.remove('ok','hide'); ico.textContent = '🔒';
     $('#b-zout').classList.add('pulse');
-    const reste = Math.max(0, Math.round((G.reqSpan-G.maxSpanSeen)/52*10)/10);
-    $('#gatetxt').textContent = 'Dézoome encore ~'+String(reste).replace('.',',')+' an pour décider';
+    const reste = Math.max(0.1, Math.round((G.reqSpan-G.maxSpanSeen)/52*10)/10);
+    $('#gatetxt').innerHTML = G.mode==='simple'
+      ? 'Appuie sur <b style="color:#fff">−</b> pour dézoomer avant de jouer'
+      : 'Dézoome d’abord : encore ~'+String(reste).replace('.',',')
+        +' an'+(reste>=2?'s':'')+' de recul avant de pouvoir décider';
   }
   $('#card').classList.toggle('locked', !G.gateOK);
+  if(typeof resetCardFace==='function') resetCardFace();
+}
+
+/* le joueur a tenté de décider trop tôt : on le lui montre */
+function refusDezoom(){
+  const c = $('#card'), g = $('#gate');
+  c.classList.remove('nope'); void c.offsetWidth; c.classList.add('nope');
+  g.classList.remove('hide','beat'); void g.offsetWidth; g.classList.add('beat');
+  $('#b-zout').classList.add('pulse');
+  Audio_.play('click');
+  setTimeout(()=>{ c.classList.remove('nope'); g.classList.remove('beat'); }, 500);
 }
 
 /* ============================================================
@@ -121,6 +142,12 @@ function updateGate(){
   function neutre(){
     fbig.className='big'; fbig.style.color='var(--txt)';
     const al=card.querySelector('.arrow.l'), ar=card.querySelector('.arrow.r');
+    if(G.sc && !G.gateOK){                       // verrouillée : on affiche la raison
+      al.textContent=''; ar.textContent='';
+      fbig.innerHTML = '<span class="lockface"><b>🔒</b>DÉZOOME D’ABORD</span>';
+      fsub.textContent = 'prends du recul sur le cycle avant de décider';
+      return;
+    }
     if(G.mode==='simple'){
       // les actions vivent sur les bords vers lesquels on glisse
       al.textContent='⏳'; ar.textContent='💰';
@@ -177,7 +204,8 @@ function updateGate(){
   }
 
   function down(e){
-    if(!G.gateOK || G.revealing || G.done) return;
+    if(G.revealing || G.done) return;
+    if(!G.gateOK){ refusDezoom(); return; }
     Audio_.wake(); drag=true; card.style.transition='';
     x0=e.clientX; y0=e.clientY; card.setPointerCapture&&card.setPointerCapture(e.pointerId);
   }
@@ -196,7 +224,9 @@ function updateGate(){
 
   // équivalents clavier (desktop / tests) : jamais de bouton "tout miser"
   window.addEventListener('keydown',e=>{
-    if(!G.gateOK||G.revealing||G.done) return;
+    if(G.revealing||G.done) return;
+    if(!G.gateOK && ['ArrowRight','ArrowLeft','ArrowUp'].includes(e.key)){ refusDezoom(); return; }
+    if(!G.gateOK && e.key!=='+' && e.key!=='=' && e.key!=='-') return;
     if(e.key==='ArrowRight') doAction('buy',.15);
     if(e.key==='ArrowLeft')  doAction('wait',0);
     if(e.key==='ArrowUp' && G.units>0) doAction('sell',.25);
