@@ -26,21 +26,51 @@ function missionBar(){
 /* --- classement empilé : reproduction du visuel fourni --- */
 const SPARK='<svg width="13" height="13" viewBox="0 0 24 24" style="flex:0 0 auto"><path d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0z" fill="currentColor"/></svg>';
 const AVCOL=['#e0648a','#5b8def','#3fbf8f','#8b5cf6','#f59e0b','#ef4444'];
-function avatar(nom){
-  let h=0; for(const c of nom) h=(h*31+c.charCodeAt(0))|0;
+function avatar(nom, photo){
+  if(photo) return `<div class="av photo" style="background-image:url('${photo}')"></div>`;
+  let h=0; for(const c of (nom||'?')) h=(h*31+c.charCodeAt(0))|0;
   const col=AVCOL[Math.abs(h)%AVCOL.length];
-  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${nom[0].toUpperCase()}</div>`;
+  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${(nom||'?')[0].toUpperCase()}</div>`;
 }
-function leaderboard(list, rang, demo, moi){
-  const rows = list.slice(0,5).map((u,i)=>`
+function leaderboard(list, rang, demo, moi, metric){
+  metric = metric || 'xp';
+  // la précision classe sur la qualité des décisions, l'XP sur le volume joué
+  let tri = list.slice();
+  if(metric==='prec'){
+    tri.sort((a,b)=>{
+      const pa=precisionDe(a), pb=precisionDe(b);
+      if(pa==null && pb==null) return b.xp-a.xp;
+      if(pa==null) return 1; if(pb==null) return -1;
+      return pb-pa || b.xp-a.xp;
+    });
+  }
+  const val = u => metric==='prec'
+    ? (precisionDe(u)!=null ? precisionDe(u)+' %' : '—')
+    : '+'+fmt(u.xp)+' XP';
+  const rows = tri.slice(0,5).map((u,i)=>`
     <div class="lbrow r${i+1}${moi && u.pseudo===moi.pseudo && u.xp===moi.xp ? ' me':''}">
-      <div class="rk">${i+1}</div>${avatar(u.pseudo)}
+      <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
       <div class="nm">${u.pseudo}</div>
-      <div class="pt">+${fmt(u.xp)} XP ${SPARK}</div>
+      <div class="pt">${val(u)} ${SPARK}</div>
     </div>`).join('');
-  const rank = rang==null?'':`<div class="lbme">TON RANG : ${rang>0?'#'+rang:'non classé'} · ${fmt(G.prof.xp)} XP</div>`;
+
+  const monRang = metric==='prec'
+    ? tri.findIndex(u=>moi && u.pseudo===moi.pseudo && u.xp===moi.xp)+1
+    : rang;
+  const maVal = metric==='prec'
+    ? (precisionDe(G.prof)!=null ? precisionDe(G.prof)+' % de bonnes décisions'
+       : 'encore '+(MIN_DECISIONS-(G.prof.rounds||0))+' décisions avant d’être classé')
+    : fmt(G.prof.xp)+' XP';
+  const rank = `<div class="lbme">TON RANG : ${monRang>0?'#'+monRang:'non classé'} · ${maVal}</div>`;
+
+  const onglets = `<div class="lbtabs">
+      <b data-k="xp" class="${metric==='xp'?'on':''}">XP</b>
+      <b data-k="prec" class="${metric==='prec'?'on':''}">PRÉCISION</b></div>`;
+  const legende = metric==='prec'
+    ? '<p class="note" style="text-align:center;margin-top:6px">Part de tes décisions posées dans la bonne zone du cycle. À partir de '+MIN_DECISIONS+' décisions.</p>'
+    : '<p class="note" style="text-align:center;margin-top:6px">L’XP récompense le temps de jeu. La précision, la qualité des décisions.</p>';
   const dem = demo?'<p class="note" style="text-align:center;margin-top:8px">Classement de démonstration : crée un compte pour être classé face aux vrais joueurs.</p>':'';
-  return `<div class="lbwrap"><div class="lbstack">${rows}</div></div>${rank}${dem}`;
+  return onglets+`<div class="lbwrap"><div class="lbstack">${rows}</div></div>`+rank+legende+dem;
 }
 
 /* --- animation de montée de niveau --- */
@@ -90,7 +120,7 @@ function renderResultSimple(R){
   const {sc,ser,last,buys,pru,zPru,score,valeur,xpGain}=R;
   const n = score>=12?5 : score>=8?4 : score>=5?3 : score>=0?2 : 1;
   const pastilles = Array.from({length:5},(_,i)=>`<s class="${i<n?'on':''}"></s>`).join('');
-  const mult = valeur/CAPITAL_INIT;
+  const perf = (valeur/CAPITAL_INIT - 1) * 100;
   const sousSommet = pru!=null ? Math.max(0, Math.round((1-pru/sc.pPk0)*100)) : null;
   const an = i => ser.dates[i].slice(0,4);
 
@@ -99,7 +129,7 @@ function renderResultSimple(R){
     <div class="pastilles">${pastilles}</div>
     <div class="asset">${ser.nom}</div>
     <div class="years">${an(sc.decs[0])} → ${an(sc.end)}<span style="opacity:.45"> · creux ${an(sc.tr)}</span></div>
-    <div class="mult" style="color:${mult>=1?'#5fe8b6':'#ff9098'}">×${mult.toFixed(2).replace('.',',')}</div>
+    <div class="mult" style="color:${perf>=0?'#5fe8b6':'#ff9098'}">${perf>=0?'+':'−'}${Math.abs(perf).toFixed(0)} %</div>
     <div class="xp">+${xpGain} XP</div>
     <div class="mini">
       <div><u>🪙</u><b>${buys.length}</b></div>
@@ -183,8 +213,10 @@ function renderResult(R){
     <h2>Contexte au moment de tes achats</h2>${infos}
 
     <h2>Performance (information, pas score)</h2>
-    <div class="kv"><span>Capital final</span><b>${fmt(valeur)} €</b></div>
-    <div class="kv"><span>Si tu avais tout mis dès la 1ʳᵉ manche</span><b>${fmt(bh)} €</b></div>
+    <div class="kv"><span>Capital final</span><b>${fmt(valeur)} €
+      <span style="color:${valeur>=CAPITAL_INIT?'#5fe8b6':'#ff9098'}">(${valeur>=CAPITAL_INIT?'+':'−'}${Math.abs(valeur/CAPITAL_INIT*100-100).toFixed(0)} %)</span></b></div>
+    <div class="kv"><span>Si tu avais tout mis dès la 1ʳᵉ manche</span><b>${fmt(bh)} €
+      <span style="color:var(--dim)">(${bh>=CAPITAL_INIT?'+':'−'}${Math.abs(bh/CAPITAL_INIT*100-100).toFixed(0)} %)</span></b></div>
     <p class="note" style="margin-top:10px">Sur un seul cycle, le tout-d’un-coup peut battre les paliers.
     Sur 20 cycles, il te sort du marché une fois sur deux. Le score note la méthode, pas la chance.</p>
 

@@ -23,6 +23,22 @@ l'ATH, distance à la MM200, distance au halving, courbe de calibration.
 
 Un nouveau compte démarre en mode SIMPLE ; le choix est ensuite mémorisé.
 
+## Profil
+
+Photo et pseudo se modifient depuis la page profil (le crayon à côté du nom,
+ou la photo elle-même). L'image est recadrée en carré, réduite à 128 px et
+compressée dans le navigateur avant l'envoi : quelques kilo-octets, jamais le
+fichier d'origine. Les deux sont stockés sur le compte et suivent l'appareil.
+
+## Deux mesures au classement
+
+Le classement bascule entre deux colonnes :
+
+- **XP** — récompense le temps de jeu. Plus tu joues, plus tu montes.
+- **PRÉCISION** — part des décisions posées dans la bonne zone du cycle,
+  affichée à partir de 20 décisions. C'est la mesure de qualité : elle ne
+  monte pas parce qu'on joue beaucoup, mais parce qu'on se trompe moins.
+
 ## Compte obligatoire
 
 Il n'y a pas de mode invité : sans compte, `app.html` et `profil.html` renvoient

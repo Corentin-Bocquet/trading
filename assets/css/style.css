@@ -341,3 +341,33 @@ a.btn{text-decoration:none;text-align:center;display:block}
 .modesw b{padding:5px 7px;font-size:9px}
 .icobtn{width:32px;height:32px;font-size:14px}
 .simple .topbar{gap:10px}
+
+/* ============================================================
+   PROFIL ÉDITABLE : pseudo et photo
+   ============================================================ */
+.bigav{width:56px;height:56px;border-radius:50%;position:relative;flex:0 0 auto;padding:0;
+  background:var(--panel3);border:1px solid var(--line);overflow:visible}
+.bigav span{position:absolute;inset:0;border-radius:50%;overflow:hidden;display:grid;place-items:center;
+  font-size:22px;font-weight:800;color:#fff;background-size:cover;background-position:center}
+.bigav i.pen{position:absolute;right:-3px;bottom:-3px;width:22px;height:22px;border-radius:50%;
+  background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600;font-size:11px;font-style:normal;
+  display:grid;place-items:center;border:2px solid var(--bg)}
+.pen.sm{width:24px;height:24px;border-radius:8px;background:var(--panel3);border:1px solid var(--line);
+  font-size:11px;color:var(--muted);display:grid;place-items:center;flex:0 0 auto}
+.editbox{display:none;padding:14px;border:1px solid var(--line);border-radius:16px;
+  background:var(--panel2);margin-bottom:18px}
+.editbox.on{display:block}
+.av.photo{background-size:cover;background-position:center;color:transparent}
+
+/* onglets du classement : XP ou précision */
+.lbtabs{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+.lbtabs b{font-size:10px;font-weight:800;letter-spacing:.08em;padding:7px 14px;border-radius:999px;
+  background:var(--panel3);border:1px solid var(--line);color:var(--muted);cursor:pointer}
+.lbtabs b.on{background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600;border-color:transparent}
+/* en-tête du profil : la photo et le nom d'abord, les réglages ensuite */
+.phead{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.pinfo{flex:1;min-width:0}
+.prow{display:flex;align-items:center;gap:7px;min-width:0}
+.prow span{font-size:18px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phead .note{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.swrow{display:flex;justify-content:center;margin-bottom:18px}

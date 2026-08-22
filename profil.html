@@ -19,16 +19,37 @@
 <body>
 <div id="app">
 <section class="page">
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-    <div class="lvl-badge" style="width:44px;height:44px;border-radius:14px;font-size:16px" id="p-lvl">1</div>
-    <div style="min-width:0">
-      <div style="font-size:18px;font-weight:800" id="p-nom">Toi</div>
+  <div class="phead">
+    <button class="bigav" id="p-av" aria-label="Changer la photo">
+      <span id="p-avin"></span><i class="pen">&#9998;</i>
+    </button>
+    <div class="pinfo">
+      <div class="prow">
+        <span id="p-nom">Toi</span>
+        <button class="pen sm" id="p-editbtn" aria-label="Modifier le profil">&#9998;</button>
+      </div>
       <div class="note" id="p-meta"></div>
     </div>
-    <div style="flex:1"></div>
-    <div class="modesw" id="modesw" style="margin-right:6px"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
     <a class="icobtn" href="app.html" style="text-decoration:none" aria-label="Jouer">&#9654;</a>
     <a class="icobtn" href="index.html" style="text-decoration:none" aria-label="Accueil">&#10005;</a>
+  </div>
+
+  <div class="swrow"><div class="modesw" id="modesw">
+    <b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b>
+  </div></div>
+
+  <div id="p-edit" class="editbox">
+    <input class="inp" id="e-pseudo" maxlength="18" placeholder="Ton pseudo">
+    <div class="row">
+      <button class="btn ghost" id="e-photo">&#128247;&nbsp; Photo</button>
+      <button class="btn ghost" id="e-rm">&#128465;&nbsp; Retirer</button>
+    </div>
+    <div class="err" id="e-err"></div><div class="ok" id="e-ok"></div>
+    <div class="row">
+      <button class="btn" id="e-save">Enregistrer</button>
+      <button class="btn ghost" id="e-cancel">Annuler</button>
+    </div>
+    <input type="file" id="e-file" accept="image/*" style="display:none">
   </div>
 
   <div id="p-mission"></div>

@@ -36,7 +36,7 @@ const MISSIONS_PAR_NIVEAU = 7;
 const G = {
   user:null, offline:false, token:null, sbUp:null,
   mode:'simple',              // 'simple' (gestuel, sans texte) ou 'pro' (dense, chiffré)
-  prof:{pseudo:'Toi', level:1, xp:0, best:0, missions:0, rounds:0, sessions:0},
+  prof:{pseudo:'Toi', avatar:null, level:1, xp:0, best:0, missions:0, rounds:0, sessions:0},
   hist:[],
   sc:null, ser:null,
   round:0, cash:CAPITAL_INIT, units:0, cost:0, totSpent:0, totUnits:0,
@@ -46,6 +46,14 @@ const G = {
 };
 
 function missionDone(){ return G.prof.missions % MISSIONS_PAR_NIVEAU; }
+
+/* précision : part des décisions jouées dans une bonne zone.
+   Plus lisible que l'XP, qui ne mesure que le temps passé. */
+const MIN_DECISIONS = 20;   // en dessous, le pourcentage ne veut rien dire
+function precisionDe(p){
+  const t = p.rounds||0, b = p.missions||0;
+  return t >= MIN_DECISIONS ? Math.round(b/t*100) : null;
+}
 function niveauDe(m){ return Math.floor(m/MISSIONS_PAR_NIVEAU)+1; }
 
 /* ---------- persistance locale (mode invité + cache hors ligne) ---------- */
@@ -59,7 +67,7 @@ function saveLocal(){
 function loadLocal(){
   try{
     const p = JSON.parse(localStorage.getItem('cyc_prof')||'null');
-    if(p) G.prof = {missions:0, rounds:0, sessions:0, best:0, ...p};
+    if(p) G.prof = {missions:0, rounds:0, sessions:0, best:0, avatar:null, ...p};
     G.hist  = JSON.parse(localStorage.getItem('cyc_hist')||'[]');
     G.token = localStorage.getItem('cyc_tok')||null;
     // un nouveau venu démarre en mode simple ; un habitué garde son dernier choix

@@ -45,8 +45,10 @@ const Cloud = (() => {
         body:JSON.stringify({id:uid, pseudo:pseudo||('Joueur'+uid.slice(0,4))})});
     }
     const p = rows[0];
-    G.prof = {pseudo:p.pseudo, level:p.level, xp:p.xp, best:+p.best_score,
-              missions:p.rounds_played, rounds:p.rounds_played, sessions:p.sessions_played};
+    G.prof = {pseudo:p.pseudo, avatar:p.avatar||null, level:p.level, xp:p.xp, best:+p.best_score,
+              missions:p.rounds_played,                 // décisions bien jouées (pilote les niveaux)
+              rounds:p.total_calls || 0,                // décisions au total (0 = pas encore mesuré)
+              sessions:p.sessions_played};
     // l'historique des scores sert à la courbe de calibration
     const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+uid+'&select=*&order=created_at.asc&limit=60');
     G.hist = (s||[]).map(x=>({t:new Date(x.created_at).getTime(), id:x.scenario_id, a:x.asset,
@@ -60,7 +62,8 @@ const Cloud = (() => {
     try{
       await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH',
         body:JSON.stringify({level:G.prof.level, xp:G.prof.xp, best_score:Math.round(G.prof.best),
-          rounds_played:G.prof.missions, sessions_played:G.prof.sessions, updated_at:new Date().toISOString()})});
+          rounds_played:G.prof.missions, total_calls:G.prof.rounds,
+          sessions_played:G.prof.sessions, updated_at:new Date().toISOString()})});
       await api('/rest/v1/cyc_sessions', {method:'POST', body:JSON.stringify({
         user_id:G.user.id, scenario_id:rec.id, asset:rec.a, score:Math.round(rec.score),
         grade:verdictGlobal(rec.score).k, avg_zone:rec.zPru!=null?Number(rec.zPru.toFixed(4)):null,
@@ -68,13 +71,16 @@ const Cloud = (() => {
     }catch(e){ console.warn('sync', e.message); }
   }
 
-  const DEMO = [{pseudo:'Anna',xp:12400,level:9},{pseudo:'Sam',xp:8600,level:7},
-                {pseudo:'Nariman',xp:5100,level:5},{pseudo:'Caleb',xp:2450,level:3},
-                {pseudo:'Iris',xp:1200,level:2}];
+  const DEMO = [{pseudo:'Anna',xp:12400,level:9,missions:214,rounds:248},
+                {pseudo:'Sam',xp:8600,level:7,missions:139,rounds:181},
+                {pseudo:'Nariman',xp:5100,level:5,missions:78,rounds:112},
+                {pseudo:'Caleb',xp:2450,level:3,missions:31,rounds:60},
+                {pseudo:'Iris',xp:1200,level:2,missions:12,rounds:29}];
   async function leaderboard(){
     if(G.token && G.sbUp!==false){
       try{
-        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp&order=xp.desc&limit=20', {});
+        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls&order=xp.desc&limit=30', {});
+        (rows||[]).forEach(r=>{ r.missions=r.rounds_played; r.rounds=r.total_calls||0; });
         if(rows && rows.length){
           // rang calculé côté serveur : robuste même si deux joueurs ont le même pseudo
           let rank = 0;
@@ -88,7 +94,8 @@ const Cloud = (() => {
         }
       }catch(e){ console.warn('lb', e.message); }
     }
-    const moi = {pseudo:G.prof.pseudo, xp:G.prof.xp, level:G.prof.level};
+    const moi = {pseudo:G.prof.pseudo, xp:G.prof.xp, level:G.prof.level, avatar:G.prof.avatar,
+                 missions:G.prof.missions, rounds:G.prof.rounds};
     const list = [...DEMO, moi].sort((a,b)=>b.xp-a.xp);
     return {list, rank:list.indexOf(moi)+1, demo:true, moi};
   }
@@ -119,8 +126,22 @@ const Cloud = (() => {
     return G.sbUp;
   }
 
+  // enregistre le pseudo et la photo de profil
+  async function saveProfil({pseudo, avatar}){
+    if(!G.user && G.token) await restore();
+    if(!G.user) throw new Error('Session expirée, reconnecte-toi.');
+    if(pseudo!=null) G.prof.pseudo = pseudo;
+    if(avatar!==undefined) G.prof.avatar = avatar;
+    saveLocal();
+    if(!G.token || G.sbUp===false) return;
+    const body = {updated_at:new Date().toISOString()};
+    if(pseudo!=null) body.pseudo = pseudo;
+    if(avatar!==undefined) body.avatar = avatar;
+    await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH', body:JSON.stringify(body)});
+  }
+
   return {
-    ping,
+    ping, saveProfil,
     signup: async (m,p,ps)=>{ const j=await auth('signup',{email:m,password:p,data:{pseudo:ps}});
       if(!j.access_token && j.id){ const k=await auth('token?grant_type=password',{email:m,password:p});
         return afterAuth(k,ps); } return afterAuth(j,ps); },
