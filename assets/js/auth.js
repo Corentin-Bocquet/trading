@@ -23,7 +23,7 @@
     try{
       if(mode==='signup') await Cloud.signup(mail, pass, pseudo);
       else                await Cloud.login(mail, pass);
-      G.guest=false; saveLocal();
+      G.offline=false; saveLocal();
       okm('Connecté. On lance une partie.');
       setTimeout(()=>go('app.html'), 350);
     }catch(e){

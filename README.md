@@ -4,6 +4,31 @@ Application web (PWA) d'entraînement à la lecture des cycles boursiers.
 Le principe : on ne tope jamais le point exact, on reconnaît une **zone**,
 on **dézoome**, et on **fractionne** ses entrées et ses sorties par paliers.
 
+## Deux modes, une seule progression
+
+Une bascule **SIMPLE / PRO** est présente dans la barre du haut de chaque écran.
+Les deux partagent le même compte, les mêmes données, le même scoring et le
+même XP : seule l'interface change.
+
+**SIMPLE** — gestuel, sans texte. Deux pictogrammes sur les bords de la carte
+(⏳ à gauche pour attendre, 💰 à droite pour poser un palier, 💸 vers le haut
+pour prendre des profits), une barre de cash, des pièces pour les paliers posés,
+un cadenas qui s'ouvre quand on a assez dézoomé, et un pictogramme plein écran
+en retour de chaque décision. Le bilan tient en une pastille de qualité,
+le nom de l'actif, deux dates et un multiplicateur.
+
+**PRO** — dense. Cash, investi, nombre de paliers, prix de revient, axes chiffrés,
+échelle log ou linéaire, notation détaillée décision par décision, drawdown depuis
+l'ATH, distance à la MM200, distance au halving, courbe de calibration.
+
+Un nouveau compte démarre en mode SIMPLE ; le choix est ensuite mémorisé.
+
+## Compte obligatoire
+
+Il n'y a pas de mode invité : sans compte, `app.html` et `profil.html` renvoient
+vers la page de connexion. Une fois connecté, l'app reste jouable hors réseau
+et la progression repart vers le serveur au retour de la connexion.
+
 ## En ligne
 
 **https://corentin-bocquet.github.io/trading/**
@@ -59,12 +84,6 @@ assets/js/profil.js        amorçage de la page progression
 assets/sounds/*.mp3        effets sonores
 assets/icons/*.png         icônes d'application
 ```
-
-## Version fichier unique
-
-`trading-fichier-unique.html` contient toute l'application dans un seul fichier
-(données, sons en base64, images comprises). Pratique pour l'envoyer par message
-ou l'ouvrir d'un double-clic. Elle n'a pas les pages séparées ni le mode PWA.
 
 ## Les icônes
 

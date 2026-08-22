@@ -29,7 +29,13 @@
         <div class="xpmini"><i id="t-xpbar" style="width:0%"></i></div>
       </div>
     </div>
-    <div class="mid" id="t-round">MANCHE 1 / 9</div>
+    <div class="mid">
+      <span id="t-round">MANCHE 1 / 9</span>
+      <span class="dots" id="t-dots"></span>
+    </div>
+    <div class="modesw" id="modesw">
+      <b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b>
+    </div>
     <button class="icobtn" id="b-sound" aria-label="Son">&#9834;</button>
     <button class="icobtn" id="b-menu" aria-label="Profil">&#9776;</button>
   </div>
@@ -41,9 +47,14 @@
     <div class="stat"><u>PRU</u><b id="t-pru">&mdash;</b></div>
   </div>
 
+  <div class="money">
+    <div class="bar"><i id="m-bar" style="width:100%"></i></div>
+    <div class="coins" id="m-coins"></div>
+  </div>
+
   <div class="chartwrap" id="chartwrap">
     <canvas id="chart"></canvas>
-    <div class="chip anon">ACTIF <span class="q">? ? ?</span> &middot; P&Eacute;RIODE MASQU&Eacute;E</div>
+    <div class="chip anon" id="chipanon">ACTIF <span class="q">? ? ?</span> &middot; P&Eacute;RIODE MASQU&Eacute;E</div>
     <div class="zoomctl">
       <button class="zbtn" id="b-zout" aria-label="D&eacute;zoomer">&minus;</button>
       <button class="zbtn" id="b-zin" aria-label="Zoomer">+</button>
@@ -68,6 +79,7 @@
     </div>
   </div>
   <div class="toast" id="toast"></div>
+  <div id="flash"><b></b></div>
 </section>
 
 <!-- ============ BILAN DE FIN DE CYCLE ============ -->

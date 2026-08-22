@@ -2,6 +2,8 @@
    BOOT de la page profil / classement (profil.html)
    ============================================================ */
 (async function bootProfil(){
+  if(!requireAuth()) return;
+  wireModeSwitch();
   $('#p-lvl').textContent  = G.prof.level;
   $('#p-nom').textContent  = G.prof.pseudo;
   $('#p-meta').textContent = `${fmt(G.prof.xp)} XP · ${G.prof.sessions} cycle${G.prof.sessions>1?'s':''} joué${G.prof.sessions>1?'s':''} · record ${G.prof.best>0?'+':''}${G.prof.best}`;
@@ -22,5 +24,5 @@
   $('#p-lb').innerHTML = leaderboard(list, rank, demo, moi);
 
   $('#b-out').onclick = ()=>{ localStorage.removeItem('cyc_tok'); localStorage.removeItem('cyc_ref');
-    localStorage.setItem('cyc_guest','0'); go('index.html'); };
+    go('index.html'); };
 })();

@@ -30,7 +30,7 @@ const Cloud = (() => {
 
   async function afterAuth(j, pseudo){
     if(!j.access_token){ throw new Error('Compte créé. Confirme ton email puis connecte-toi.'); }
-    G.token = j.access_token; G.user = j.user; G.guest = false;
+    G.token = j.access_token; G.user = j.user; G.offline = false;
     localStorage.setItem('cyc_tok', j.access_token);
     localStorage.setItem('cyc_ref', j.refresh_token||'');
     await loadProfile(pseudo);
@@ -56,7 +56,7 @@ const Cloud = (() => {
 
   async function saveSession(rec, detail){
     saveLocal();
-    if(G.guest || !G.token) return;
+    if(!G.token || G.sbUp===false) return;
     try{
       await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH',
         body:JSON.stringify({level:G.prof.level, xp:G.prof.xp, best_score:Math.round(G.prof.best),
@@ -72,7 +72,7 @@ const Cloud = (() => {
                 {pseudo:'Nariman',xp:5100,level:5},{pseudo:'Caleb',xp:2450,level:3},
                 {pseudo:'Iris',xp:1200,level:2}];
   async function leaderboard(){
-    if(!G.guest && G.token){
+    if(G.token && G.sbUp!==false){
       try{
         const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp&order=xp.desc&limit=20', {});
         if(rows && rows.length){
@@ -99,7 +99,7 @@ const Cloud = (() => {
     try{
       const r = await fetch(SB_URL+'/auth/v1/user', {headers:{'apikey':SB_KEY,'Authorization':'Bearer '+t}});
       if(!r.ok) throw 0;
-      G.user = await r.json(); G.guest=false; await loadProfile(); return true;
+      G.user = await r.json(); G.offline=false; await loadProfile(); return true;
     }catch(e){
       const rt = localStorage.getItem('cyc_ref');
       if(rt){ try{ const j = await auth('token?grant_type=refresh_token',{refresh_token:rt});

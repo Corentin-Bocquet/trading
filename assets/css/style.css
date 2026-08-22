@@ -230,3 +230,114 @@ p.lead{color:var(--muted);font-size:13.5px;line-height:1.55;margin:0 0 16px}
 a.btn{text-decoration:none;text-align:center;display:block}
 /* la ligne du joueur courant est cerclée d'or dans le classement */
 .lbrow.me{box-shadow:0 0 0 2px var(--gold),0 12px 26px rgba(0,0,0,.55);opacity:1 !important;filter:none !important}
+
+/* ============================================================
+   MODE SIMPLE : interface épurée, gestuelle, sans texte
+   Tout est piloté par la classe .simple posée sur #app.
+   Le mode PRO reste strictement inchangé.
+   ============================================================ */
+
+/* --- bascule entre les deux modes --- */
+.modesw{display:flex;align-items:center;gap:0;border-radius:999px;background:var(--panel3);
+  border:1px solid var(--line);padding:2px;flex:0 0 auto}
+.modesw b{font-size:9.5px;font-weight:800;letter-spacing:.06em;padding:5px 9px;border-radius:999px;
+  color:var(--dim);transition:.18s}
+.modesw b.on{background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600}
+
+/* --- barre du haut simplifiée --- */
+.simple .stats{display:none}
+.simple .topbar{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:12px;gap:12px}
+.simple .lvl-meta{display:none}
+.simple .topbar .mid{display:flex;justify-content:center;gap:5px;align-items:center}
+.dots{display:none;gap:5px}
+.simple .dots{display:flex}
+.simple #t-round{display:none}
+.dots i{width:7px;height:7px;border-radius:50%;background:#31353d;display:block;transition:.3s}
+.dots i.done{background:var(--gold)}
+.dots i.now{background:var(--gold2);box-shadow:0 0 9px rgba(255,211,77,.8);transform:scale(1.45)}
+
+/* --- bandeau visuel : cash restant + paliers posés --- */
+.money{display:none;align-items:center;gap:12px;padding:11px 14px;background:var(--panel2);
+  border-bottom:1px solid var(--line);flex:0 0 auto}
+.simple .money{display:flex}
+.money .bar{flex:1;height:14px;border-radius:9px;background:#22262e;overflow:hidden;position:relative}
+.money .bar i{display:block;height:100%;border-radius:9px;transition:width .5s cubic-bezier(.2,.9,.25,1);
+  background:linear-gradient(90deg,#9fdc1e,#c8f83a);box-shadow:0 0 14px rgba(184,236,47,.45)}
+.money .coins{display:flex;gap:3px;align-items:center;font-size:15px;line-height:1}
+.money .coins s{text-decoration:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.6))}
+
+/* --- graphique épuré --- */
+.simple .chip.anon{top:12px;left:12px;width:34px;height:34px;padding:0;border-radius:50%;
+  justify-content:center;background:rgba(18,20,25,.8)}
+.simple .chip.anon .q{font-size:19px;font-weight:800;letter-spacing:0}
+.simple .zoomctl{top:auto;bottom:12px;left:50%;transform:translateX(-50%)}
+.simple .zbtn{width:44px;height:44px;font-size:22px;border-radius:14px}
+.simple .zbtn.sm,.simple #t-span{display:none}
+.simple .gate{background:none;border:0;backdrop-filter:none;bottom:auto;top:44%;padding:0}
+.simple .gate span:last-child{display:none}
+.simple .gate span:first-child{font-size:46px;animation:pulse 1.5s ease-in-out infinite;
+  filter:drop-shadow(0 4px 14px rgba(0,0,0,.7))}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.16);opacity:1}}
+
+/* --- carte de décision plein pouce --- */
+.simple .hints{display:none}
+.simple .deck{padding:12px 14px calc(env(safe-area-inset-bottom) + 14px)}
+.simple .card{height:150px;border-radius:26px}
+.simple .arrow{font-size:34px;opacity:.8;filter:drop-shadow(0 2px 6px rgba(0,0,0,.6))}
+.simple .arrow.l{left:22px} .simple .arrow.r{right:22px}
+.swipehint{font-size:36px;opacity:.28;display:block;animation:sw 2s ease-in-out infinite}
+@keyframes sw{0%,100%{transform:translateX(-9px)}50%{transform:translateX(9px)}}
+@media (prefers-reduced-motion:reduce){.swipehint{animation:none}}
+.simple .arrowup{font-size:24px;top:12px}
+.simple .face .big{font-size:44px}
+.simple .face .sub{display:none}
+.simple .amt{font-size:64px}
+.simple .amt small{font-size:26px}
+.simple .gauge{height:10px;bottom:16px}
+
+/* --- retour immédiat : un pictogramme plein écran, aucun mot --- */
+#flash{position:absolute;inset:0;z-index:60;display:none;place-items:center;pointer-events:none}
+#flash.on{display:grid}
+#flash b{font-size:130px;line-height:1;animation:flashin .75s cubic-bezier(.16,1,.3,1);
+  filter:drop-shadow(0 10px 34px rgba(0,0,0,.8))}
+@keyframes flashin{0%{opacity:0;transform:scale(.35)}35%{opacity:1;transform:scale(1.14)}
+  75%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.04)}}
+.simple .toast{display:none}
+
+/* --- bilan simplifié --- */
+.sres{display:flex;flex-direction:column;align-items:center;text-align:center;gap:0;padding-top:8px}
+.sres .pastilles{display:flex;gap:11px;margin-bottom:26px}
+.sres .pastilles s{width:26px;height:26px;border-radius:50%;background:#23262c;text-decoration:none;display:block}
+.sres .pastilles s.on{background:linear-gradient(150deg,#ffd34d,#f5a524);
+  box-shadow:0 0 18px rgba(245,165,36,.55)}
+.sres .asset{font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.sres .years{font-size:17px;color:var(--muted);font-family:var(--mono);margin-top:6px;letter-spacing:.02em}
+.sres .mult{font-size:66px;font-weight:800;font-family:var(--mono);margin:26px 0 2px;line-height:1}
+.sres .xp{font-size:15px;color:var(--gold2);font-weight:800}
+.sres .mini{display:flex;gap:26px;margin:26px 0 4px}
+.sres .mini div{text-align:center}
+.sres .mini b{display:block;font-size:26px;font-family:var(--mono);font-weight:700}
+.sres .mini u{display:block;font-size:22px;text-decoration:none;margin-bottom:3px}
+.bigbtn{width:78px;height:78px;border-radius:50%;display:grid;place-items:center;font-size:30px;
+  background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600;margin:28px auto 0;
+  box-shadow:0 10px 30px rgba(245,165,36,.35)}
+.roundbtn{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-size:20px;
+  background:var(--panel3);border:1px solid var(--line);margin:0 auto}
+.sres .row2{display:flex;gap:16px;justify-content:center;margin-top:22px}
+/* bouton de dézoom qui appelle le geste tant que le recul n'est pas pris */
+.simple .zbtn.pulse{animation:zpulse 1.4s ease-in-out infinite;
+  box-shadow:0 0 0 0 rgba(245,165,36,.55)}
+@keyframes zpulse{0%{box-shadow:0 0 0 0 rgba(245,165,36,.5)}
+  70%{box-shadow:0 0 0 16px rgba(245,165,36,0)}100%{box-shadow:0 0 0 0 rgba(245,165,36,0)}}
+@media (prefers-reduced-motion:reduce){
+  .simple .zbtn.pulse,.simple .gate span:first-child{animation:none}
+}
+
+/* la bascule de mode s'ajoute à une barre déjà dense : on resserre */
+.topbar{gap:8px;padding-left:10px;padding-right:10px}
+.topbar .mid{font-size:10.5px;white-space:nowrap;letter-spacing:.08em}
+.xpmini{width:60px}
+.lvl-meta b{font-size:10px}
+.modesw b{padding:5px 7px;font-size:9px}
+.icobtn{width:32px;height:32px;font-size:14px}
+.simple .topbar{gap:10px}

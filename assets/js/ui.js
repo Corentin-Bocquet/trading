@@ -85,8 +85,46 @@ function calibCanvas(){
   },30);
 }
 
+/* --- bilan du mode SIMPLE : pictogrammes, un actif, deux dates, un chiffre --- */
+function renderResultSimple(R){
+  const {sc,ser,last,buys,pru,zPru,score,valeur,xpGain}=R;
+  const n = score>=12?5 : score>=8?4 : score>=5?3 : score>=0?2 : 1;
+  const pastilles = Array.from({length:5},(_,i)=>`<s class="${i<n?'on':''}"></s>`).join('');
+  const mult = valeur/CAPITAL_INIT;
+  const sousSommet = pru!=null ? Math.max(0, Math.round((1-pru/sc.pPk0)*100)) : null;
+  const an = i => ser.dates[i].slice(0,4);
+
+  $('#res-body').innerHTML = `
+  <div class="sres">
+    <div class="pastilles">${pastilles}</div>
+    <div class="asset">${ser.nom}</div>
+    <div class="years">${an(sc.decs[0])} → ${an(sc.end)}<span style="opacity:.45"> · creux ${an(sc.tr)}</span></div>
+    <div class="mult" style="color:${mult>=1?'#5fe8b6':'#ff9098'}">×${mult.toFixed(2).replace('.',',')}</div>
+    <div class="xp">+${xpGain} XP</div>
+    <div class="mini">
+      <div><u>🪙</u><b>${buys.length}</b></div>
+      ${sousSommet!=null?`<div><u>📉</u><b>−${sousSommet}%</b></div>`:''}
+    </div>
+    <div style="width:100%;margin-top:24px">${missionBar()}</div>
+    <button class="bigbtn" id="b-again">▶</button>
+    <div class="row2">
+      <button class="roundbtn" id="b-seechart">📈</button>
+      <button class="roundbtn" id="b-prof">🏆</button>
+    </div>
+  </div>`;
+  brancherBilan(sc);
+}
+
+function brancherBilan(sc){
+  $('#b-again').onclick    = ()=>{ Audio_.play('click'); startSession(); };
+  $('#b-seechart').onclick = ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
+    G.endVisible = sc.end; show('s-game'); Chart.resize(); Chart.draw(); };
+  $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
+}
+
 /* --- écran de bilan --- */
 function renderResult(R){
+  if(G.mode==='simple') return renderResultSimple(R);
   const {sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur,bh,xpGain,bons}=R;
   const v = verdictGlobal(score);
   const d0 = ser.dates[sc.decs[0]], d1 = ser.dates[sc.end];
@@ -159,8 +197,5 @@ function renderResult(R){
     <button class="btn ghost" id="b-seechart">Revoir le cycle complet</button>
     <button class="btn ghost" id="b-prof">Classement &amp; progression</button>`;
 
-  $('#b-again').onclick   = ()=>{ Audio_.play('click'); startSession(); };
-  $('#b-seechart').onclick= ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
-    G.endVisible = sc.end; show('s-game'); Chart.resize(); Chart.draw(); };
-  $('#b-prof').onclick    = ()=>{ Audio_.play('click'); go('profil.html'); };
+  brancherBilan(sc);
 }

@@ -48,6 +48,24 @@ function updateHUD(){
   $('#t-xpbar').style.width = (missionDone()/MISSIONS_PAR_NIVEAU*100)+'%';
   $('#hint-up').style.opacity = G.units>0 ? 1 : .25;
   $('#aup').style.opacity = G.units>0 ? .22 : .05;
+
+  // --- mode simple : une barre de cash et des pièces, aucun chiffre à lire ---
+  const nb = G.actions.filter(a=>a.type==='buy').length;
+  $('#m-bar').style.width = clamp(G.cash/CAPITAL_INIT*100, 0, 100)+'%';
+  $('#m-coins').innerHTML = nb ? Array.from({length:Math.min(nb,7)},()=>'<s>🪙</s>').join('')
+                              : '<s style="opacity:.22">🪙</s>';
+  $('#t-dots').innerHTML = G.sc.decs.map((_,i)=>
+    `<i class="${i<G.round?'done':(i===G.round?'now':'')}"></i>`).join('');
+  $('#aup').textContent = (G.mode==='simple' && G.units>0) ? '💸' : '▲';
+}
+
+/* retour visuel plein écran du mode simple : un pictogramme, zéro mot */
+function flash(k){
+  const ICO = {exc:'🎯', cor:'👍', tie:'😐', bad:'❌'};
+  const f = $('#flash'); if(!f) return;
+  f.firstElementChild.textContent = ICO[k] || '👍';
+  f.classList.remove('on'); void f.offsetWidth; f.classList.add('on');
+  clearTimeout(G._ft); G._ft = setTimeout(()=>f.classList.remove('on'), 820);
 }
 
 /* ---------- zoom / dézoom + garde-fou de prise de recul ---------- */
@@ -64,12 +82,15 @@ function updateGate(){
   $('#b-scale').textContent = G.view.scale==='log' ? 'LOG' : 'LIN';
   if(G.maxSpanSeen >= G.reqSpan) G.gateOK = true;
   const g = $('#gate');
+  const ico = g.firstElementChild;
   if(G.gateOK){
-    g.classList.add('ok');
+    g.classList.add('ok'); ico.textContent = '🔓';
+    $('#b-zout').classList.remove('pulse');
     $('#gatetxt').textContent = 'Recul pris · décision débloquée';
     clearTimeout(G._gt); G._gt = setTimeout(()=>g.classList.add('hide'), 1400);
   }else{
-    g.classList.remove('ok','hide');
+    g.classList.remove('ok','hide'); ico.textContent = '🔒';
+    $('#b-zout').classList.add('pulse');
     const reste = Math.max(0, Math.round((G.reqSpan-G.maxSpanSeen)/52*10)/10);
     $('#gatetxt').textContent = 'Dézoome encore ~'+String(reste).replace('.',',')+' an pour décider';
   }
@@ -91,12 +112,26 @@ function updateGate(){
     card.style.transition='transform .22s cubic-bezier(.2,.9,.3,1)';
     card.style.transform='translate(0,0) rotate(0deg)';
     tint.style.opacity=0; gauge.style.opacity=0; mode=null; val=0;
-    fbig.textContent='GLISSE POUR DÉCIDER';
-    fbig.style.color='var(--txt)'; fbig.className='big';
-    fsub.textContent='jamais tout d’un coup · 35 % max par palier';
+    neutre();
     setTimeout(()=>card.style.transition='',230);
   }
   window.resetCard = reset;
+
+  // état au repos : une phrase en PRO, des pictogrammes en SIMPLE
+  function neutre(){
+    fbig.className='big'; fbig.style.color='var(--txt)';
+    const al=card.querySelector('.arrow.l'), ar=card.querySelector('.arrow.r');
+    if(G.mode==='simple'){
+      // les actions vivent sur les bords vers lesquels on glisse
+      al.textContent='⏳'; ar.textContent='💰';
+      fbig.innerHTML='<span class="swipehint">↔</span>';
+    }else{
+      al.textContent='◀'; ar.textContent='▶';
+      fbig.textContent='GLISSE POUR DÉCIDER';
+    }
+    fsub.textContent='jamais tout d’un coup · 35 % max par palier';
+  }
+  window.resetCardFace = neutre;
 
   function render(dx,dy){
     const canSell = G.units>0;
@@ -107,9 +142,7 @@ function updateGate(){
     mode=m;
     card.style.transform = m==='sell' ? `translate(0,${clamp(dy,-140,0)}px)`
       : `translate(${clamp(dx,-170,170)}px,0) rotate(${clamp(dx,-170,170)*0.028}deg)`;
-    if(!m){ tint.style.opacity=0; gauge.style.opacity=0;
-      fbig.textContent='GLISSE POUR DÉCIDER'; fbig.style.color='var(--txt)';
-      fsub.textContent='jamais tout d’un coup · 35 % max par palier'; return; }
+    if(!m){ tint.style.opacity=0; gauge.style.opacity=0; neutre(); return; }
 
     if(m==='buy'){
       const t = clamp((dx-TH)/RANGE,0,1);
@@ -119,7 +152,8 @@ function updateGate(){
       tint.style.opacity=1; gauge.style.opacity=1;
       fill.style.width=(val/MAX_PALIER*100)+'%';
       fill.style.background='linear-gradient(90deg,#16c784,#5fe8b6)';
-      fbig.innerHTML='<span class="amt">'+Math.round(val*100)+'<small>%</small></span>';
+      fbig.innerHTML = (G.mode==='simple' ? '<span style="font-size:30px">💰</span> ' : '')
+        + '<span class="amt">'+Math.round(val*100)+'<small>%</small></span>';
       fbig.style.color='#5fe8b6';
       fsub.textContent='PALIER D’ACHAT · '+fmt(eur)+' € sur '+fmt(G.cash)+' € de cash';
     }else if(m==='sell'){
@@ -129,13 +163,15 @@ function updateGate(){
       tint.style.opacity=1; gauge.style.opacity=1;
       fill.style.width=(val/MAX_VENTE*100)+'%';
       fill.style.background='linear-gradient(90deg,#3b82f6,#93c5fd)';
-      fbig.innerHTML='<span class="amt">'+Math.round(val*100)+'<small>%</small></span>';
+      fbig.innerHTML = (G.mode==='simple' ? '<span style="font-size:30px">💸</span> ' : '')
+        + '<span class="amt">'+Math.round(val*100)+'<small>%</small></span>';
       fbig.style.color='#93c5fd';
       fsub.textContent='PRISE DE PROFITS · '+fmt(G.units*priceAt(G.decIdx)*val)+' € de la position';
     }else{
       val=0; tint.style.background='linear-gradient(270deg,rgba(134,141,154,0),rgba(134,141,154,.22))';
       tint.style.opacity=1; gauge.style.opacity=0;
-      fbig.textContent='ATTENDRE'; fbig.style.color='#c3c9d4';
+      fbig.innerHTML = G.mode==='simple' ? '<span style="font-size:52px">⏳</span>' : 'ATTENDRE';
+      fbig.style.color='#c3c9d4';
       fsub.textContent='aucune action ce tour · le cash reste du cash';
     }
   }
@@ -192,7 +228,7 @@ function doAction(type, v){
   }
   G.actions.push(A);
   setTimeout(()=>Audio_.play(A.g.k==='exc'?'win':A.g.k==='bad'?'fail':'ok'), 160);
-  toast(A.g.k, A.g.t);
+  if(G.mode==='simple') flash(A.g.k); else toast(A.g.k, A.g.t);
   updateHUD();
   revealNext();
 }

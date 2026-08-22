@@ -34,7 +34,8 @@ const MISSIONS_PAR_NIVEAU = 7;
 
 /* ---------- état global ---------- */
 const G = {
-  user:null, guest:false, token:null, sbUp:null,
+  user:null, offline:false, token:null, sbUp:null,
+  mode:'simple',              // 'simple' (gestuel, sans texte) ou 'pro' (dense, chiffré)
   prof:{pseudo:'Toi', level:1, xp:0, best:0, missions:0, rounds:0, sessions:0},
   hist:[],
   sc:null, ser:null,
@@ -52,7 +53,7 @@ function saveLocal(){
   try{
     localStorage.setItem('cyc_prof', JSON.stringify(G.prof));
     localStorage.setItem('cyc_hist', JSON.stringify(G.hist.slice(-60)));
-    localStorage.setItem('cyc_guest', G.guest?'1':'0');
+    localStorage.setItem('cyc_mode', G.mode);
   }catch(e){}
 }
 function loadLocal(){
@@ -60,12 +61,46 @@ function loadLocal(){
     const p = JSON.parse(localStorage.getItem('cyc_prof')||'null');
     if(p) G.prof = {missions:0, rounds:0, sessions:0, best:0, ...p};
     G.hist  = JSON.parse(localStorage.getItem('cyc_hist')||'[]');
-    G.guest = localStorage.getItem('cyc_guest')==='1';
     G.token = localStorage.getItem('cyc_tok')||null;
+    // un nouveau venu démarre en mode simple ; un habitué garde son dernier choix
+    const m = localStorage.getItem('cyc_mode');
+    G.mode = m || (G.prof.sessions>0 ? 'pro' : 'simple');
   }catch(e){}
   if(G.prof.missions==null) G.prof.missions=0;
 }
 loadLocal();
+
+/* ---------- deux modes d'affichage, une seule progression ---------- */
+function applyMode(){
+  const app = document.getElementById('app'); if(!app) return;
+  app.classList.toggle('simple', G.mode==='simple');
+  const chip = document.getElementById('chipanon');
+  if(chip && !G.revealPrices) chip.innerHTML = G.mode==='simple'
+    ? '<span class="q">?</span>'
+    : 'ACTIF <span class="q">? ? ?</span> · PÉRIODE MASQUÉE';
+  document.querySelectorAll('.modesw b').forEach(b=>b.classList.toggle('on', b.dataset.m===G.mode));
+}
+function setMode(m){
+  G.mode = m; saveLocal(); applyMode();
+  if(typeof Chart!=='undefined' && G.sc){ Chart.resize(); Chart.draw(); }
+  if(typeof updateHUD==='function' && G.sc) updateHUD();
+  if(typeof updateGate==='function' && G.sc) updateGate();
+  if(typeof resetCardFace==='function') resetCardFace();
+}
+function wireModeSwitch(){
+  document.querySelectorAll('.modesw b').forEach(b=>{
+    b.onclick = ()=>{ if(G.mode===b.dataset.m) return;
+      Audio_.play('click'); setMode(b.dataset.m); };
+  });
+  applyMode();
+}
+
+/* ---------- accès réservé aux comptes ---------- */
+function requireAuth(){
+  if(G.token) return true;
+  location.replace('login.html');
+  return false;
+}
 
 /* ---------- navigation entre écrans d'une même page ---------- */
 function show(id){ $$('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }

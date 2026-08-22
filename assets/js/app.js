@@ -2,6 +2,8 @@
    BOOT de la page de jeu (app.html)
    ============================================================ */
 (async function bootApp(){
+  if(!requireAuth()) return;
+  wireModeSwitch();
   // contrôles graphiques
   $('#b-zin').onclick   = ()=>zoom(1);
   $('#b-zout').onclick  = ()=>zoom(-1);
@@ -37,6 +39,6 @@
   window.addEventListener('resize', ()=>{ if(G.sc){ Chart.resize(); Chart.draw(); } });
 
   // synchronisation du profil serveur avant de lancer la partie
-  if(G.token && !G.guest){ try{ await Cloud.restore(); }catch(e){} }
+  if(G.token){ try{ await Cloud.restore(); }catch(e){} applyMode(); }
   startSession();
 })();

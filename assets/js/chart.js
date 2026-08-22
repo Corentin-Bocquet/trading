@@ -7,7 +7,7 @@
 const Chart = (() => {
   const cv = $('#chart'), cx = cv.getContext('2d');
   let W=0, H=0, dpr=1;
-  const PADR = 54, PADB = 22, PADT = 8;
+  let PADR = 54, PADB = 22; const PADT = 8;
 
   function resize(){
     const r = cv.getBoundingClientRect();
@@ -30,6 +30,9 @@ const Chart = (() => {
     if(!G.sc) return;
     const {start, end, n} = range();
     const O = G.ser.ohlc;
+    // en mode simple, ni axe ni étiquette : les bougies occupent tout l'espace
+    const nu = G.mode==='simple' && !G.revealPrices;
+    PADR = nu ? 8 : 54; PADB = nu ? 8 : 22;
     cx.clearRect(0,0,W,H);
 
     // bornes de prix visibles
@@ -53,13 +56,15 @@ const Chart = (() => {
       const yy = Math.round(y(logS?Math.exp(vv):vv))+.5;
       cx.strokeStyle='#181b21'; cx.lineWidth=1;
       cx.beginPath(); cx.moveTo(0,yy); cx.lineTo(plotW,yy); cx.stroke();
-      cx.fillStyle='#5b626e'; cx.textAlign='left';
-      cx.fillText(fmt2(disp(logS?Math.exp(vv):vv)), plotW+7, yy);
+      if(G.mode!=='simple'){
+        cx.fillStyle='#5b626e'; cx.textAlign='left';
+        cx.fillText(fmt2(disp(logS?Math.exp(vv):vv)), plotW+7, yy);
+      }
     }
 
     // axe du temps : durées relatives uniquement (aucune date pendant la décision)
     cx.textAlign='center'; cx.fillStyle='#4a505b'; cx.font='9.5px ui-monospace,Menlo,monospace';
-    const marks=[0,.25,.5,.75,1];
+    const marks = G.mode==='simple' ? [] : [0,.25,.5,.75,1];
     marks.forEach(m=>{
       const i = Math.round(start + (n-1)*m);
       const semaines = end - i;
@@ -106,13 +111,15 @@ const Chart = (() => {
       cx.fillText(Math.round(A.pctCap*100)+'%', xi, buy? yi+26 : yi-22);
     });
 
-    // ligne du dernier prix
+    // ligne du dernier prix (l'étiquette chiffrée disparaît en mode simple)
     const last = O[end][3], ly = Math.round(y(last))+.5;
     cx.setLineDash([3,3]); cx.strokeStyle='rgba(233,236,241,.32)'; cx.lineWidth=1;
     cx.beginPath(); cx.moveTo(0,ly); cx.lineTo(plotW,ly); cx.stroke(); cx.setLineDash([]);
-    cx.fillStyle='#e9ecf1'; cx.fillRect(plotW+2, ly-9, PADR-4, 18);
-    cx.fillStyle='#0a0b0d'; cx.font='700 10px ui-monospace,Menlo,monospace'; cx.textAlign='center';
-    cx.fillText(fmt2(disp(last)), plotW+2+(PADR-4)/2, ly);
+    if(!nu){
+      cx.fillStyle='#e9ecf1'; cx.fillRect(plotW+2, ly-9, PADR-4, 18);
+      cx.fillStyle='#0a0b0d'; cx.font='700 10px ui-monospace,Menlo,monospace'; cx.textAlign='center';
+      cx.fillText(fmt2(disp(last)), plotW+2+(PADR-4)/2, ly);
+    }
   }
 
   return {resize, draw, range};
