@@ -109,6 +109,9 @@ function lancer(){
   if(total > G.prof.cashRl){ messageRl('Tu n’as pas assez pour cette mise.'); return; }
 
   RL.tourne = true;
+  // on ramène le joueur sur la roue : il vient de miser en bas de page
+  const w = document.querySelector('.roulettewrap');
+  if(w) w.scrollIntoView({behavior:'smooth', block:'center'});
   G.prof.cashRl -= total;               // la mise quitte la caisse au lancement
   majSoldes();
   $('#b-lancer').disabled = true;

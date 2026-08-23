@@ -100,6 +100,24 @@ function coutNiveau(n){ const c = COUT_BASE + COUT_PENTE*n; return n%5===0 ? c*2
 function seuilNiveau(n){ let s=0; for(let i=1;i<n;i++) s+=coutNiveau(i); return s; }
 const MIN_DECISIONS  = 20;      // avant ça, le pourcentage de bonnes décisions ne veut rien dire
 
+/* ---------- les quatre jeux : chacun sa caisse et sa couleur ---------- */
+const BJ_DEPART = 200, PK_DEPART = 500;
+const JEUX = {
+  trading:  {nom:'TRADING',  page:'app.html',       depart:CAPITAL_DEPART, unite:'$'},
+  roulette: {nom:'ROULETTE', page:'roulette.html',  depart:RL_DEPART,      unite:'€'},
+  blackjack:{nom:'BLACKJACK',page:'blackjack.html', depart:BJ_DEPART,      unite:'€'},
+  poker:    {nom:'POKER',    page:'poker.html',     depart:PK_DEPART,      unite:'€'}
+};
+const caisseDe = (p,j) => j==='trading' ? (p.cash!=null?p.cash:CAPITAL_DEPART)
+                        : j==='roulette'? (p.cashRl!=null?p.cashRl:RL_DEPART)
+                        : j==='blackjack'?(p.cashBj!=null?p.cashBj:BJ_DEPART)
+                        : (p.cashPk!=null?p.cashPk:PK_DEPART);
+const ruinesDe = (p,j) => j==='trading' ? (p.ruines||0) : j==='roulette' ? (p.ruinesRl||0)
+                        : j==='blackjack'? (p.ruinesBj||0) : (p.ruinesPk||0);
+const gainJeu   = (p,j) => caisseDe(p,j) - JEUX[j].depart*(1+ruinesDe(p,j));
+const sousJeu   = (n,j) => fmt(n)+' '+JEUX[j].unite;
+
+
 /* ---------- état global ---------- */
 const G = {
   user:null, offline:false, token:null, sbUp:null,
@@ -108,7 +126,9 @@ const G = {
   marche:{cat:'tout'},        // catégorie de marché choisie
   prof:{pseudo:'Toi', avatar:null, level:1, xp:0, best:0, missions:0, rounds:0,
         sessions:0, cash:CAPITAL_DEPART, ruines:0,
-        cashRl:RL_DEPART, ruinesRl:0, toursRl:0, spins:[], streak:0, jour:null},
+        cashRl:RL_DEPART, ruinesRl:0, toursRl:0, spins:[], streak:0, jour:null,
+        cashBj:BJ_DEPART, ruinesBj:0, mainsBj:0,
+        cashPk:PK_DEPART, ruinesPk:0, mainsPk:0},
   reglages:{part:1, manches:10},   // part du portefeuille engagée, nombre de manches
   hist:[],
   sc:null, ser:null, capital:CAPITAL_DEPART,
@@ -133,6 +153,25 @@ function gainDe(p){
 }
 function gainRlDe(p){
   return (p.cashRl!=null?p.cashRl:RL_DEPART) - RL_DEPART*(1+(p.ruinesRl||0));
+}
+
+/* ---------- cartes : sabot, tirage, rendu ---------- */
+const COULEURS = [{s:'♠',c:'noir'},{s:'♥',c:'rouge'},{s:'♦',c:'rouge'},{s:'♣',c:'noir'}];
+const VALEURS  = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+function nouveauSabot(nJeux){
+  const d=[];
+  for(let k=0;k<nJeux;k++)
+    for(let co=0;co<4;co++)
+      for(let v=0;v<13;v++) d.push({v:VALEURS[v], co});
+  // mélange de Fisher-Yates avec le générateur cryptographique
+  const r=new Uint32Array(d.length); crypto.getRandomValues(r);
+  for(let i=d.length-1;i>0;i--){ const j=r[i]%(i+1); [d[i],d[j]]=[d[j],d[i]]; }
+  return d;
+}
+function carteHTML(c, cachee){
+  if(cachee) return '<div class="carte dos"></div>';
+  const co = COULEURS[c.co];
+  return `<div class="carte ${co.c}"><b>${c.v}</b><i>${co.s}</i></div>`;
 }
 
 /* série de jours : incrémentée une fois par jour, quel que soit le jeu */
@@ -161,7 +200,9 @@ function loadLocal(){
     const p = JSON.parse(localStorage.getItem('cyc_prof')||'null');
     if(p) G.prof = {missions:0, rounds:0, sessions:0, best:0, avatar:null,
                     cash:CAPITAL_DEPART, ruines:0, cashRl:RL_DEPART, ruinesRl:0,
-                    toursRl:0, spins:[], streak:0, jour:null, ...p};
+                    toursRl:0, spins:[], streak:0, jour:null,
+                    cashBj:BJ_DEPART, ruinesBj:0, mainsBj:0,
+                    cashPk:PK_DEPART, ruinesPk:0, mainsPk:0, ...p};
     const rg = JSON.parse(localStorage.getItem('cyc_reglages')||'null');
     if(rg) G.reglages = {part:1, manches:10, ...rg};
     G.hist  = JSON.parse(localStorage.getItem('cyc_hist')||'[]');

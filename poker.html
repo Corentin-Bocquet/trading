@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<title>Trading &middot; Poker</title>
+</head>
+<body>
+<div id="app">
+<section class="page jeu-pk">
+
+  <div class="topbar">
+    <div class="soldebox"><u>TA CAVE</u><b id="pk-solde">500 &euro;</b></div>
+    <a class="marchebtn" href="index.html">ACCUEIL</a>
+    <button class="wordbtn sm" id="b-sound">SON</button>
+    <a class="wordbtn sm" href="profil.html">MENU</a>
+  </div>
+
+  <div class="subbar">
+    <span>POT <b id="pk-pot">0 &euro;</b></span>
+    <span id="pk-tour"></span>
+    <span>MAINS <b id="pk-mains">0</b></span>
+    <div class="modesw" id="modesw"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
+  </div>
+
+  <div class="feutre pk">
+    <div class="pkbots" id="pk-bots"></div>
+    <div class="ligne">
+      <u>CARTES COMMUNES</u>
+      <div class="cartes" id="pk-commune"></div>
+    </div>
+    <div class="ligne">
+      <u>TA MAIN <b id="pk-force"></b></u>
+      <div class="cartes" id="pk-main"></div>
+      <div class="pktapis">Ta cave : <b id="pk-tapis">500 &euro;</b> &middot; engag&eacute; : <b id="pk-engage">&mdash;</b></div>
+    </div>
+    <div class="bjmsg" id="pk-msg"></div>
+  </div>
+
+  <div class="resume" id="pk-resume"></div>
+  <div class="ruinebox" id="ruine-pk">TU AS TOUT PERDU<span>cave remise &agrave; 500 &euro;</span></div>
+
+  <div id="pk-actions" class="bjactions" style="display:none">
+    <button class="btn" id="b-suivre">SUIVRE</button>
+    <div class="row">
+      <button class="btn ghost" id="b-relancer">RELANCER</button>
+      <button class="btn ghost" id="b-coucher">SE COUCHER</button>
+    </div>
+    <button class="btn ghost" id="b-tapis">TAPIS</button>
+  </div>
+
+  <button class="btn" id="pk-nouvelle">NOUVELLE MAIN</button>
+
+  <h2>Les r&egrave;gles de cette table</h2>
+  <p class="expl">Texas Hold'em, quatre joueurs, blindes de 5 et 10 &euro;.
+  Deux cartes pour toi, cinq cartes communes, quatre tours d'ench&egrave;res.
+  Le bouton <b>D</b> tourne &agrave; chaque main. Les adversaires jouent selon la force
+  r&eacute;elle de leur main et la cote du pot, avec une part d'impr&eacute;visible.</p>
+  <p class="expl">Contrairement &agrave; la roulette, le poker n'a <b>pas d'avantage math&eacute;matique
+  contre toi</b> : sur la dur&eacute;e, c'est ton jugement qui d&eacute;cide. C'est le jeu le plus
+  proche du trading dans cette app &mdash; on parie sur une information incompl&egrave;te,
+  et bien miser compte plus que gagner souvent.</p>
+
+  <a class="btn ghost" href="index.html" style="margin-top:18px">RETOUR &Agrave; L'ACCUEIL</a>
+  <div class="grow"></div>
+</section>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/poker.js"></script>
+</body></html>

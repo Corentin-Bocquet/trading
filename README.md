@@ -4,11 +4,36 @@ Application web (PWA) d'entraînement à la lecture des cycles boursiers.
 Le principe : on ne tope jamais le point exact, on reconnaît une **zone**,
 on **dézoome**, et on **fractionne** ses entrées et ses sorties par paliers.
 
-## Deux jeux, un seul compte
+## Quatre jeux, un seul compte
 
-L'accueil ouvre sur deux onglets : **TRADING** et **ROULETTE**. Même compte, même
-pseudo, même photo, même série de jours — mais **deux portefeuilles séparés**
-(10 000 $ au trading, 50 € à la roulette) et **deux classements séparés**.
+L'accueil ouvre sur quatre tuiles : **TRADING**, **ROULETTE**, **BLACKJACK**, **POKER**.
+Même compte, même pseudo, même photo, même série de jours — mais **une caisse par jeu**
+et **un classement par jeu**.
+
+| Jeu | Caisse de départ | Couleur |
+|---|---|---|
+| Trading | 10 000 $ | or |
+| Roulette | 50 € | jaune doré |
+| Blackjack | 200 € | vert |
+| Poker | 500 € | rouge |
+
+Les montants sont choisis pour que chaque jeu tienne une trentaine de coups à la mise
+minimale : 5 € au blackjack, 1 € à la roulette, blindes de 5 et 10 au poker.
+Caisse à zéro : recapitalisation et compteur de ruines propre au jeu.
+
+### Blackjack
+
+Sabot de 6 jeux mélangé au générateur cryptographique, remélangé au quart restant.
+Croupier à 16, reste à 17 même souple. Blackjack payé 3 contre 2, doublement,
+séparation jusqu'à quatre mains. Pas d'assurance : c'est le pari le plus perdant
+du blackjack et l'app explique pourquoi.
+
+### Poker
+
+Texas Hold'em à quatre, blindes 5 et 10. Évaluateur de main sur les 21 combinaisons
+de 5 parmi 7, vérifié sur les dix catégories y compris la quinte à l'as bas.
+Les adversaires décident sur la force réelle de leur main et la cote du pot,
+avec une part d'imprévisible.
 
 ### Roulette
 
@@ -27,6 +52,13 @@ rien** : chaque tour est indépendant et la banque garde 2,7 % de chaque mise.
 C'est le contraire exact du trading, où les cycles ont une forme.
 
 Caisse à zéro : recapitalisation à 50 € et compteur de ruines incrémenté.
+
+## Prolonger une partie de trading
+
+À la fin des manches prévues, si des bougies réelles existent après la dernière,
+l'app propose de continuer : « encore 30 manches jouables, soit 6,3 ans de marché réel.
+Rien n'est inventé. » On peut prolonger plusieurs fois, tant que la donnée existe.
+Sinon le bilan s'affiche directement.
 
 ## Réglages avant chaque partie de trading
 

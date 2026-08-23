@@ -94,6 +94,9 @@
     const t=$('#j-trading'), r=$('#j-roulette');
     if(t) t.textContent = dollars(G.prof.cash);
     if(r) r.textContent = fmt(G.prof.cashRl)+' €';
+    const bj=$('#j-blackjack'), pk=$('#j-poker');
+    if(bj) bj.textContent = fmt(G.prof.cashBj)+' €';
+    if(pk) pk.textContent = fmt(G.prof.cashPk)+' €';
   }
   majJeux();
 

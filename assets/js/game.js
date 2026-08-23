@@ -344,13 +344,51 @@ function revealNext(){
     if(G.endVisible >= target){
       clearInterval(G.anim); G.revealing=false;
       G.round++;
-      if(G.round >= G.decs.length) endSession(); else setupRound();
+      if(G.round >= G.decs.length) finDeManches(); else setupRound();
       return;
     }
     G.endVisible++;
     G.view.span = Math.min(G.view.span+1, G.endVisible-sc.start+1);
     Chart.draw();
   }, 46);
+}
+
+/* ---------- prolongation : uniquement si les bougies existent vraiment ---------- */
+function manchesRestantes(){
+  const dispo = G.ser.ohlc.length-1 - G.sc.end;
+  const pas = Math.max(2, G.decs.length>1 ? G.decs[1]-G.decs[0] : G.sc.step);
+  return {pas, possible: Math.floor(dispo/pas)};
+}
+function finDeManches(){
+  const {possible} = manchesRestantes();
+  if(possible < 1){ endSession(); return; }
+  proposerProlongation(Math.min(5, possible), possible);
+}
+function prolonger(n){
+  const {pas} = manchesRestantes();
+  const depart = G.sc.end;
+  for(let k=1;k<=n;k++){
+    const i = depart + (k-1)*pas;
+    if(i <= G.ser.ohlc.length-1) G.decs.push(i);
+  }
+  G.sc = Object.assign({}, G.sc, {end: Math.min(G.ser.ohlc.length-1, depart + n*pas)});
+  $('#prolonge').classList.remove('on');
+  setupRound();
+}
+function proposerProlongation(n, possible){
+  const el = $('#prolonge');
+  const ans = (possible*(manchesRestantes().pas))/52;
+  el.querySelector('.pbody').innerHTML = `
+    <div class="ptitre">LA PARTIE EST FINIE</div>
+    <p class="expl">Ce qui s'est passé après existe vraiment dans l'historique :
+    encore ${possible} manche${possible>1?'s':''} jouable${possible>1?'s':''},
+    soit ${ans>=1?ans.toFixed(1).replace('.',','):('~'+Math.round(ans*12))} ${ans>=1?'ans':'mois'} de marché réel.
+    Rien n'est inventé.</p>
+    <button class="btn" id="p-plus">CONTINUER — ${n} MANCHE${n>1?'S':''} DE PLUS</button>
+    <button class="btn ghost" id="p-stop">M'ARRÊTER LÀ ET VOIR LE BILAN</button>`;
+  el.classList.add('on');
+  $('#p-plus').onclick = ()=>{ Audio_.play('click'); prolonger(n); };
+  $('#p-stop').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); endSession(); };
 }
 
 /* ============================================================

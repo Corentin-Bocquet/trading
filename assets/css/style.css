@@ -728,3 +728,98 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border:0;border-radiu
 .av.gros{width:52px;height:52px;font-size:20px}
 .lbtabs.jeux2{margin-bottom:8px}
 .lbtabs.jeux2 b{flex:1;text-align:center;padding:10px 8px;font-size:10.5px}
+
+/* proposition de prolongation en fin de partie */
+.prolonge{position:absolute;inset:0;z-index:70;display:none;align-items:center;justify-content:center;
+  background:rgba(6,7,9,.93);backdrop-filter:blur(12px);padding:20px}
+.prolonge.on{display:flex}
+.prolonge .pbody{width:100%;max-width:440px}
+.ptitre{text-align:center;font-size:13px;letter-spacing:.2em;color:var(--gold);font-weight:800;margin-bottom:14px}
+
+/* ============================================================
+   COULEUR PROPRE À CHAQUE JEU
+   On redéfinit les jetons dorés localement : tout le reste suit.
+   ============================================================ */
+.jeu-bj{--gold:#16c784;--gold2:#4ade80;--gold3:#a7f3c8}
+.jeu-pk{--gold:#ea3943;--gold2:#ff6b73;--gold3:#ffb3b8}
+.page.rl{--gold:#f5a524;--gold2:#ffd34d;--gold3:#ffe38a}
+
+/* ============================================================
+   BLACKJACK
+   ============================================================ */
+.page.jeu-bj{padding-left:14px;padding-right:14px}
+.page.jeu-bj .topbar,.page.jeu-bj .subbar{margin:0 -14px;padding-left:14px;padding-right:14px}
+.page.jeu-bj .subbar{gap:14px}
+.page.jeu-bj .subbar b{color:var(--txt);font-family:var(--mono)}
+.feutre{position:relative;margin:14px 0 12px;padding:18px 14px;border-radius:20px;min-height:270px;
+  background:radial-gradient(120% 80% at 50% 0%,#12513a 0%,#0d3b2b 45%,#082018 100%);
+  border:1px solid #1d6a4c;box-shadow:inset 0 2px 20px rgba(0,0,0,.45)}
+.feutre .ligne{margin-bottom:24px}
+.feutre .ligne:last-of-type{margin-bottom:0}
+.feutre u{display:block;font-size:9.5px;letter-spacing:.12em;color:rgba(255,255,255,.5);
+  text-decoration:none;font-weight:800;margin-bottom:8px}
+.feutre u b{color:#fff;font-family:var(--mono);font-size:12px;margin-left:5px}
+.cartes{display:flex;gap:6px;flex-wrap:wrap;min-height:74px}
+.carte{width:50px;height:72px;border-radius:8px;background:#fdfcf8;position:relative;flex:0 0 auto;
+  box-shadow:0 3px 10px rgba(0,0,0,.5);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:1px}
+.carte b{font-size:19px;font-weight:800;font-family:var(--mono);line-height:1}
+.carte i{font-size:18px;font-style:normal;line-height:1}
+.carte.rouge{color:#c92b34}.carte.noir{color:#15171c}
+.carte.dos{background:repeating-linear-gradient(45deg,#8a2230,#8a2230 5px,#6d1a26 5px,#6d1a26 10px);
+  box-shadow:0 3px 10px rgba(0,0,0,.5),inset 0 0 0 3px #fdfcf8}
+.bjmain{margin-bottom:10px;padding:8px;border-radius:12px;border:1px solid transparent}
+.bjmain.actif{border-color:var(--gold2);background:rgba(255,255,255,.05)}
+.bjmain.saute{opacity:.5}
+.bjpts{font-size:11px;font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,.75);margin-top:6px}
+.bjmsg{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);padding:7px 13px;
+  border-radius:10px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700;
+  opacity:0;transition:.25s;white-space:nowrap}
+.bjmsg.on{opacity:1}
+.resume{text-align:center;margin-bottom:12px;min-height:22px}
+.resume b{display:block;font-size:24px;font-family:var(--mono);font-weight:800}
+.resume b.pos{color:#5fe8b6}.resume b.neg{color:#ff9098}
+.resume span{font-size:12px;color:var(--muted)}
+.bjactions .row{margin-top:9px}
+.bjactions .btn:disabled{opacity:.35}
+#ruine-bj{display:none;margin:6px 0}
+#ruine-bj.on{display:block}
+
+/* ============================================================
+   POKER
+   ============================================================ */
+.page.jeu-pk{padding-left:14px;padding-right:14px}
+.page.jeu-pk .topbar,.page.jeu-pk .subbar{margin:0 -14px;padding-left:14px;padding-right:14px}
+.page.jeu-pk .subbar{gap:12px}
+.page.jeu-pk .subbar b{color:var(--txt);font-family:var(--mono)}
+.feutre.pk{background:radial-gradient(120% 80% at 50% 0%,#4a1420 0%,#33101a 45%,#1a070d 100%);
+  border-color:#6b2130}
+.pkbots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px}
+.pkbot{padding:8px 6px;border-radius:12px;background:rgba(0,0,0,.28);
+  border:1px solid transparent;text-align:center}
+.pkbot.actif{border-color:var(--gold2);background:rgba(255,255,255,.07)}
+.pkbot.couche{opacity:.4}
+.pknom{font-size:11px;font-weight:800;color:#fff;margin-bottom:5px}
+.pknom .bouton{display:inline-grid;place-items:center;width:15px;height:15px;border-radius:50%;
+  background:#fdfcf8;color:#15171c;font-size:9px;font-weight:800;text-decoration:none;
+  vertical-align:middle;margin-left:3px}
+.cartes.mini{justify-content:center;min-height:44px;gap:3px}
+.cartes.mini .carte{width:30px;height:42px}
+.cartes.mini .carte b{font-size:12px}.cartes.mini .carte i{font-size:11px}
+.pktapis{font-size:10.5px;color:rgba(255,255,255,.65);margin-top:5px}
+.pktapis b{color:#fff;font-family:var(--mono)}
+#ruine-pk{display:none;margin:6px 0}
+#ruine-pk.on{display:block}
+/* quatre tuiles de jeu, chacune sa couleur */
+.jeu{border-left:3px solid var(--line)}
+.jeu.j-tr{border-left-color:#f5a524}
+.jeu.j-rl{border-left-color:#ffd34d}
+.jeu.j-bj{border-left-color:#16c784}
+.jeu.j-pk{border-left-color:#ea3943}
+.jeu .t{color:var(--txt)}
+.jeu.j-tr .t{color:#f5a524}.jeu.j-rl .t{color:#ffd34d}
+.jeu.j-bj .t{color:#4ade80}.jeu.j-pk .t{color:#ff6b73}
+/* .page est une colonne flex : sans ça, les blocs hauts se font écraser
+   et leur contenu déborde par-dessus les boutons qui suivent */
+.page > *{flex-shrink:0}
+.lbtabs.jeux2 b{padding:9px 4px;font-size:9px;letter-spacing:.03em}

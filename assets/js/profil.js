@@ -130,7 +130,8 @@
     });
     $$('.lbtabs b[data-j]').forEach(b=>{
       b.onclick=()=>{ Audio_.play('click');
-        mesure = b.dataset.j==='roulette' ? 'caisse' : 'argent';
+        mesure = ({trading:'argent', roulette:'caisse',
+                   blackjack:'caissebj', poker:'cavepk'})[b.dataset.j] || 'argent';
         localStorage.setItem('cyc_mesure',mesure); rendreClassement(); };
     });
     const more=$('#b-lbmore');

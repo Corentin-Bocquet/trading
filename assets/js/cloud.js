@@ -53,7 +53,9 @@ const Cloud = (() => {
               ruines:p.ruines||0,
               cashRl:p.cash_rl!=null ? +p.cash_rl : RL_DEPART,
               ruinesRl:p.ruines_rl||0, toursRl:p.tours_rl||0,
-              spins:decodeSpins(p.spins), streak:p.streak||0, jour:p.dernier_jour||null};
+              spins:decodeSpins(p.spins), streak:p.streak||0, jour:p.dernier_jour||null,
+              cashBj:p.cash_bj!=null?+p.cash_bj:BJ_DEPART, ruinesBj:p.ruines_bj||0, mainsBj:p.mains_bj||0,
+              cashPk:p.cash_pk!=null?+p.cash_pk:PK_DEPART, ruinesPk:p.ruines_pk||0, mainsPk:p.mains_pk||0};
     // l'historique des scores sert à la courbe de calibration
     const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+uid+'&select=*&order=created_at.asc&limit=60');
     let prec = CAPITAL_DEPART;
@@ -103,6 +105,26 @@ const Cloud = (() => {
     }, 900);
   }
 
+  // sauvegarde d'un jeu de cartes (blackjack, poker)
+  let fileJeu = null;
+  async function saveJeu(jeu){
+    saveLocal();
+    if(!G.token || G.sbUp===false) return;
+    clearTimeout(fileJeu);
+    fileJeu = setTimeout(async ()=>{
+      try{
+        if(!G.user) await restore();
+        const b = {streak:G.prof.streak||0, dernier_jour:G.prof.jour,
+                   updated_at:new Date().toISOString()};
+        if(jeu==='blackjack'){ b.cash_bj=Math.round(G.prof.cashBj); b.ruines_bj=G.prof.ruinesBj;
+                               b.mains_bj=G.prof.mainsBj; }
+        else { b.cash_pk=Math.round(G.prof.cashPk); b.ruines_pk=G.prof.ruinesPk;
+               b.mains_pk=G.prof.mainsPk; }
+        await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH', body:JSON.stringify(b)});
+      }catch(e){ console.warn(jeu, e.message); }
+    }, 900);
+  }
+
   // historique public d'un autre joueur, pour la fiche du classement
   async function sessionsDe(pseudo){
     try{
@@ -126,11 +148,13 @@ const Cloud = (() => {
   async function leaderboard(){
     if(G.token && G.sbUp!==false){
       try{
-        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls,cash,ruines,cash_rl,ruines_rl,tours_rl,streak&order=cash.desc&limit=40', {});
+        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls,cash,ruines,cash_rl,ruines_rl,tours_rl,streak,cash_bj,ruines_bj,mains_bj,cash_pk,ruines_pk,mains_pk&order=cash.desc&limit=40', {});
         (rows||[]).forEach(r=>{ r.missions=r.rounds_played; r.rounds=r.total_calls||0;
           r.cash = r.cash!=null ? +r.cash : CAPITAL_DEPART; r.ruines = r.ruines||0;
           r.cashRl = r.cash_rl!=null ? +r.cash_rl : RL_DEPART;
-          r.ruinesRl = r.ruines_rl||0; r.toursRl = r.tours_rl||0; r.streak = r.streak||0; });
+          r.ruinesRl = r.ruines_rl||0; r.toursRl = r.tours_rl||0; r.streak = r.streak||0;
+          r.cashBj = r.cash_bj!=null?+r.cash_bj:BJ_DEPART; r.ruinesBj=r.ruines_bj||0; r.mainsBj=r.mains_bj||0;
+          r.cashPk = r.cash_pk!=null?+r.cash_pk:PK_DEPART; r.ruinesPk=r.ruines_pk||0; r.mainsPk=r.mains_pk||0; });
         if(rows && rows.length){
           return {list:rows, rank:0, moi:{pseudo:G.prof.pseudo, xp:G.prof.xp,
                   cash:G.prof.cash, ruines:G.prof.ruines,
@@ -141,7 +165,9 @@ const Cloud = (() => {
     const moi = {pseudo:G.prof.pseudo, xp:G.prof.xp, level:G.prof.level, avatar:G.prof.avatar,
                  missions:G.prof.missions, rounds:G.prof.rounds,
                  cash:G.prof.cash, ruines:G.prof.ruines, cashRl:G.prof.cashRl,
-                 ruinesRl:G.prof.ruinesRl, toursRl:G.prof.toursRl, streak:G.prof.streak};
+                 ruinesRl:G.prof.ruinesRl, toursRl:G.prof.toursRl, streak:G.prof.streak,
+                 cashBj:G.prof.cashBj, ruinesBj:G.prof.ruinesBj, mainsBj:G.prof.mainsBj,
+                 cashPk:G.prof.cashPk, ruinesPk:G.prof.ruinesPk, mainsPk:G.prof.mainsPk};
     const list = [...DEMO, moi].sort((a,b)=>b.xp-a.xp);
     return {list, rank:list.indexOf(moi)+1, demo:true, moi};
   }
@@ -201,7 +227,7 @@ const Cloud = (() => {
   }
 
   return {
-    ping, saveProfil, savePush, removePush, saveRoulette, sessionsDe,
+    ping, saveProfil, savePush, removePush, saveRoulette, saveJeu, sessionsDe,
     signup: async (m,p,ps)=>{ const j=await auth('signup',{email:m,password:p,data:{pseudo:ps}});
       if(!j.access_token && j.id){ const k=await auth('token?grant_type=password',{email:m,password:p});
         return afterAuth(k,ps); } return afterAuth(j,ps); },

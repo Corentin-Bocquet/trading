@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<title>Trading &middot; Blackjack</title>
+</head>
+<body>
+<div id="app">
+<section class="page jeu-bj">
+
+  <div class="topbar">
+    <div class="soldebox"><u>TA CAISSE</u><b id="bj-solde">200 €</b></div>
+    <a class="marchebtn" href="index.html">ACCUEIL</a>
+    <button class="wordbtn sm" id="b-sound">SON</button>
+    <a class="wordbtn sm" href="profil.html">MENU</a>
+  </div>
+
+  <div class="subbar">
+    <span>MISE <b id="bj-mise">5 €</b></span>
+    <span>MAINS <b id="bj-mains-nb">0</b></span>
+    <span>SABOT <b id="bj-sabot">312</b></span>
+    <div class="modesw" id="modesw"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
+  </div>
+
+  <div class="feutre">
+    <div class="ligne">
+      <u>CROUPIER <b id="bj-pc"></b></u>
+      <div class="cartes" id="bj-croupier"></div>
+    </div>
+    <div class="ligne">
+      <u>TOI <b id="bj-serie" style="opacity:.5"></b></u>
+      <div id="bj-mains"></div>
+    </div>
+    <div class="bjmsg" id="bj-msg"></div>
+  </div>
+
+  <div class="resume" id="bj-resume"></div>
+  <div class="ruinebox" id="ruine-bj">TU AS TOUT PERDU<span>caisse remise à 200 €</span></div>
+
+  <div id="bj-actions" class="bjactions" style="display:none">
+    <button class="btn" id="b-tirer">TIRER</button>
+    <button class="btn ghost" id="b-rester">RESTER</button>
+    <div class="row">
+      <button class="btn ghost" id="b-doubler">DOUBLER</button>
+      <button class="btn ghost" id="b-separer">SÉPARER</button>
+    </div>
+  </div>
+
+  <button class="btn" id="b-rejouer" style="display:none">MAIN SUIVANTE</button>
+
+  <div id="bj-tapis">
+    <div class="jetons">
+      <u>JETON</u>
+      <b data-v="5" class="on">5 €</b><b data-v="10">10 €</b><b data-v="25">25 €</b><b data-v="50">50 €</b>
+    </div>
+    <div class="row">
+      <button class="btn ghost" id="b-ajouter">AJOUTER À LA MISE</button>
+      <button class="btn ghost" id="b-remise">REMETTRE À 5 €</button>
+    </div>
+    <button class="btn" id="b-distribuer">DISTRIBUER</button>
+  </div>
+
+  <h2>Les règles de cette table</h2>
+  <p class="expl">Sabot de <b>6 jeux</b>, remélangé quand il reste un quart des cartes.
+  Le croupier tire jusqu'à 16 et reste à 17, même souple. Le <b>blackjack paie 3 contre 2</b>,
+  une égalité est remboursée. Tu peux doubler sur tes deux premières cartes et séparer
+  jusqu'à quatre mains.</p>
+  <p class="expl"><b>Pas d'assurance sur cette table</b>, volontairement : c'est le pari
+  le plus perdant du blackjack, il coûte environ 7 % de la somme engagée à long terme.
+  Le reste est du blackjack standard, où la banque garde à peu près 0,5 % si tu joues bien.</p>
+
+  <a class="btn ghost" href="index.html" style="margin-top:18px">RETOUR À L'ACCUEIL</a>
+  <div class="grow"></div>
+</section>
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/blackjack.js"></script>
+</body></html>

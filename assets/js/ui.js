@@ -68,6 +68,38 @@ const MESURES = {
     tri: (a,b) => gainRlDe(b)-gainRlDe(a),
     mien: () => (gainRlDe(G.prof)>=0?'+':'−')+fmt(Math.abs(gainRlDe(G.prof)))+' €',
     phrase:'Gagné ou perdu à la roulette depuis le début. Sur la durée ce chiffre baisse pour tout le monde : c’est mathématique, la banque garde 2,7 % de chaque mise.'},
+  caissebj:{jeu:'blackjack', nom:'CAISSE',
+    val: u => fmt(u.cashBj!=null?u.cashBj:BJ_DEPART)+' €',
+    tri: (a,b) => (b.cashBj||0)-(a.cashBj||0),
+    mien: () => fmt(G.prof.cashBj)+' €',
+    phrase:'Ce qu’il reste dans la caisse blackjack. Tout le monde a commencé avec 200 €.'},
+  gainbj: {jeu:'blackjack', nom:'GAIN',
+    val: u => (gainJeu(u,'blackjack')>=0?'+':'−')+fmt(Math.abs(gainJeu(u,'blackjack')))+' €',
+    tri: (a,b) => gainJeu(b,'blackjack')-gainJeu(a,'blackjack'),
+    mien: () => (gainJeu(G.prof,'blackjack')>=0?'+':'−')+fmt(Math.abs(gainJeu(G.prof,'blackjack')))+' €',
+    phrase:'Gagné ou perdu au blackjack depuis le début. Bien joué, la banque ne garde qu’un demi pour cent : c’est le jeu de casino le moins défavorable.'},
+  mainsbj:{jeu:'blackjack', nom:'MAINS',
+    val: u => fmt(u.mainsBj||0),
+    tri: (a,b) => (b.mainsBj||0)-(a.mainsBj||0),
+    mien: () => fmt(G.prof.mainsBj||0),
+    phrase:'Nombre de mains de blackjack jouées.'},
+
+  cavepk: {jeu:'poker', nom:'CAVE',
+    val: u => fmt(u.cashPk!=null?u.cashPk:PK_DEPART)+' €',
+    tri: (a,b) => (b.cashPk||0)-(a.cashPk||0),
+    mien: () => fmt(G.prof.cashPk)+' €',
+    phrase:'Ce qu’il reste dans la cave poker. Tout le monde a commencé avec 500 €.'},
+  gainpk: {jeu:'poker', nom:'GAIN',
+    val: u => (gainJeu(u,'poker')>=0?'+':'−')+fmt(Math.abs(gainJeu(u,'poker')))+' €',
+    tri: (a,b) => gainJeu(b,'poker')-gainJeu(a,'poker'),
+    mien: () => (gainJeu(G.prof,'poker')>=0?'+':'−')+fmt(Math.abs(gainJeu(G.prof,'poker')))+' €',
+    phrase:'Gagné ou perdu au poker. C’est le seul jeu de cette app où rien ne joue contre toi : sur la durée, ce chiffre ne dépend que de ton jugement.'},
+  mainspk:{jeu:'poker', nom:'MAINS',
+    val: u => fmt(u.mainsPk||0),
+    tri: (a,b) => (b.mainsPk||0)-(a.mainsPk||0),
+    mien: () => fmt(G.prof.mainsPk||0),
+    phrase:'Nombre de mains de poker jouées.'},
+
   tours:  {jeu:'roulette', nom:'TOURS',
     val: u => fmt(u.toursRl||0),
     tri: (a,b) => (b.toursRl||0)-(a.toursRl||0),
@@ -76,7 +108,7 @@ const MESURES = {
 };
 
 function badgeRuines(u, jeu){
-  const r = jeu==='roulette' ? (u.ruinesRl||0) : (u.ruines||0);
+  const r = ruinesDe(u, jeu);
   return r ? `<span class="ruine">${r} RUINE${r>1?'S':''}</span>` : '';
 }
 function badgeSerie(u){
@@ -109,9 +141,9 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
     : `<div class="lbwrap"><div class="lbstack">${tri.slice(0,5).map(pill).join('')}</div></div>`;
 
   const monRang = tri.findIndex(estMoi)+1;
-  const jeux = `<div class="lbtabs jeux2">
-      <b data-j="trading" class="${jeu==='trading'?'on':''}">TRADING</b>
-      <b data-j="roulette" class="${jeu==='roulette'?'on':''}">ROULETTE</b></div>`;
+  const jeux = `<div class="lbtabs jeux2">` +
+    Object.keys(JEUX).map(k=>`<b data-j="${k}" class="${jeu===k?'on':''}">${JEUX[k].nom}</b>`).join('') +
+    `</div>`;
   const onglets = `<div class="lbtabs">` +
     Object.keys(MESURES).filter(k=>MESURES[k].jeu===jeu)
       .map(k=>`<b data-k="${k}" class="${k===mesure?'on':''}">${MESURES[k].nom}</b>`).join('') +
@@ -140,11 +172,11 @@ async function ouvrirFiche(pseudo, liste){
     </div>
     <div class="statgrid" style="margin-top:16px">
       <div><u>TRADING</u><b>${dollars(u.cash!=null?u.cash:CAPITAL_DEPART)}</b></div>
-      <div><u>GAIN</u><b>${(gainDe(u)>=0?'+':'−')}$${fmt(Math.abs(gainDe(u)))}</b></div>
       <div><u>DÉCISIONS</u><b>${prec!=null?prec+' %':'—'}</b></div>
       <div><u>ROULETTE</u><b>${fmt(u.cashRl!=null?u.cashRl:RL_DEPART)} €</b></div>
-      <div><u>TOURS</u><b>${fmt(u.toursRl||0)}</b></div>
-      <div><u>RUINES</u><b>${(u.ruines||0)+(u.ruinesRl||0)}</b></div>
+      <div><u>BLACKJACK</u><b>${fmt(u.cashBj!=null?u.cashBj:BJ_DEPART)} €</b></div>
+      <div><u>POKER</u><b>${fmt(u.cashPk!=null?u.cashPk:PK_DEPART)} €</b></div>
+      <div><u>RUINES</u><b>${(u.ruines||0)+(u.ruinesRl||0)+(u.ruinesBj||0)+(u.ruinesPk||0)}</b></div>
     </div>
     <h2>Son argent dans le temps</h2>
     <canvas id="f-courbe" style="width:100%;height:150px;display:block"></canvas>
