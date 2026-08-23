@@ -26,10 +26,33 @@ const Chart = (() => {
     return {start, end, n:end-start+1};
   }
 
+  // nombre de semaines par bougie selon la largeur demandée
+  function groupe(n){ return n > 700 ? 13 : n > 300 ? 4 : 1; }
+  const UNITE = {1:'SEM.', 4:'MOIS', 13:'TRIM.'};
+
   function draw(){
     if(!G.sc) return;
-    const {start, end, n} = range();
-    const O = G.ser.ohlc;
+    const {start, end, n:nBrut} = range();
+    const Ow = G.ser.ohlc;
+    const grp = groupe(nBrut);
+
+    // on agrège en partant de la fin : la dernière bougie reste la plus récente
+    let O, idxDe;
+    if(grp === 1){ O = Ow; idxDe = i => i - start; }
+    else {
+      O = [];
+      const bornes = [];
+      for(let fin = end; fin >= start; fin -= grp){
+        const deb = Math.max(start, fin-grp+1);
+        let o=Ow[deb][0], h=-Infinity, l=Infinity, cl=Ow[fin][3];
+        for(let k=deb;k<=fin;k++){ if(Ow[k][1]>h)h=Ow[k][1]; if(Ow[k][2]<l)l=Ow[k][2]; }
+        O.unshift([o,h,l,cl]); bornes.unshift([deb,fin]);
+      }
+      idxDe = i => { for(let b=0;b<bornes.length;b++) if(i>=bornes[b][0] && i<=bornes[b][1]) return b;
+                     return i<start ? -1 : O.length-1; };
+    }
+    const n = grp===1 ? nBrut : O.length;
+    const iDeb = grp===1 ? start : 0, iFin = grp===1 ? end : O.length-1;
     // en mode simple, ni axe ni étiquette : les bougies occupent tout l'espace
     const nu = G.mode==='simple' && !G.revealPrices;
     PADR = nu ? 8 : 54; PADB = nu ? 8 : 22;
@@ -37,7 +60,7 @@ const Chart = (() => {
 
     // bornes de prix visibles
     let lo=Infinity, hi=-Infinity;
-    for(let i=start;i<=end;i++){ if(O[i][2]<lo) lo=O[i][2]; if(O[i][1]>hi) hi=O[i][1]; }
+    for(let i=iDeb;i<=iFin;i++){ if(O[i][2]<lo) lo=O[i][2]; if(O[i][1]>hi) hi=O[i][1]; }
     if(G.showMA && G.ser.ma200) for(let i=start;i<=end;i++){ const m=G.ser.ma200[i];
       if(m){ if(m<lo)lo=m; if(m>hi)hi=m; } }
     const logS = G.view.scale==='log';
@@ -46,7 +69,7 @@ const Chart = (() => {
     const plotH = H-PADT-PADB, plotW = W-PADR;
     const y = v => PADT + plotH - (f(v)-a)/(b-a)*plotH;
     const cw = plotW/n, bw = Math.max(1.1, Math.min(cw*0.66, 16));
-    const x = i => (i-start+0.5)*cw;
+    const x = i => (i-iDeb+0.5)*cw;
 
     // grille + axe des prix (à droite, comme sur une vraie plateforme)
     cx.font='10px ui-monospace,Menlo,monospace'; cx.textBaseline='middle';
@@ -66,27 +89,29 @@ const Chart = (() => {
     cx.textAlign='center'; cx.fillStyle='#4a505b'; cx.font='9.5px ui-monospace,Menlo,monospace';
     const marks = G.mode==='simple' ? [] : [0,.25,.5,.75,1];
     marks.forEach(m=>{
-      const i = Math.round(start + (n-1)*m);
-      const semaines = end - i;
+      const iw = Math.round(start + (nBrut-1)*m);      // index hebdomadaire
+      const i = grp===1 ? iw : idxDe(iw);
+      const semaines = end - iw;
       let lab;
       if(semaines===0) lab = "AUJOURD'HUI";
       else if(semaines < 52) lab = '−'+Math.round(semaines/4.33)+' mois';
       else { const y = Math.round(semaines/52*10)/10;
              lab = '−'+(y>=3?Math.round(y):String(y).replace('.',','))+' an'+(y>=2?'s':''); }
-      if(G.revealPrices) lab = G.ser.dates[i].slice(0,7);
+      if(G.revealPrices) lab = G.ser.dates[iw].slice(0,7);
       cx.fillText(lab, clamp(x(i),26,plotW-26), H-8);
     });
 
     // moyenne mobile 200 jours (uniquement après reveal : info, pas indice)
     if(G.showMA && G.ser.ma200){
       cx.strokeStyle='rgba(245,165,36,.75)'; cx.lineWidth=1.4; cx.beginPath(); let started=false;
-      for(let i=start;i<=end;i++){ const m=G.ser.ma200[i]; if(!m) continue;
-        const px=x(i), py=y(m); started? cx.lineTo(px,py) : (cx.moveTo(px,py), started=true); }
+      for(let i=start;i<=end;i+=grp){ const m=G.ser.ma200[i]; if(!m) continue;
+        const px=x(grp===1?i:idxDe(i)), py=y(m);
+        started? cx.lineTo(px,py) : (cx.moveTo(px,py), started=true); }
       cx.stroke();
     }
 
     // bougies
-    for(let i=start;i<=end;i++){
+    for(let i=iDeb;i<=iFin;i++){
       const [o,h,l,c] = O[i];
       const up = c>=o, col = up?'#16c784':'#ea3943';
       const xi = x(i);
@@ -100,7 +125,7 @@ const Chart = (() => {
     // marqueurs des paliers posés / profits pris
     G.actions.forEach(A=>{
       if(A.type==='wait' || A.i<start || A.i>end) return;
-      const xi=x(A.i), yi=y(A.price);
+      const xi=x(grp===1?A.i:idxDe(A.i)), yi=y(A.price);
       const buy = A.type==='buy';
       cx.fillStyle = buy?'#ffd34d':'#3b82f6';
       cx.beginPath();
@@ -112,7 +137,7 @@ const Chart = (() => {
     });
 
     // ligne du dernier prix (l'étiquette chiffrée disparaît en mode simple)
-    const last = O[end][3], ly = Math.round(y(last))+.5;
+    const last = Ow[end][3], ly = Math.round(y(last))+.5;
     cx.setLineDash([3,3]); cx.strokeStyle='rgba(233,236,241,.32)'; cx.lineWidth=1;
     cx.beginPath(); cx.moveTo(0,ly); cx.lineTo(plotW,ly); cx.stroke(); cx.setLineDash([]);
     if(!nu){
@@ -122,5 +147,5 @@ const Chart = (() => {
     }
   }
 
-  return {resize, draw, range};
+  return {resize, draw, range, uniteVisible(){ const r=range(); return UNITE[groupe(r.n)]; }};
 })();

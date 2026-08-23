@@ -51,8 +51,8 @@ async function startSession(forcedId){
   catch(e){ $('#t-round').textContent = 'DONNÉES INDISPONIBLES'; return; }
 
   G.sc = sc;
-  G.base = G.ser.ohlc[sc.start][3];
   G.decs = construireManches(sc, clamp(Math.round(G.reglages.manches||10), 5, 25));
+  G.base = G.ser.ohlc[G.decs[0]][3];
   const total = Math.max(SEUIL_RUINE, G.prof.cash || CAPITAL_DEPART);
   const part = clamp(G.reglages.part||1, 0.05, 1);
   G.capital = Math.max(1, Math.round(total*part));   // ce qui entre en jeu
@@ -69,9 +69,10 @@ function setupRound(){
   G.decIdx = G.decs[G.round];
   G.endVisible = G.decIdx;
   const avail = G.decIdx - sc.start + 1;
-  G.reqSpan = Math.min(avail, Math.max(140, Math.floor(avail*0.7)));
+  G.reqSpan = Math.min(avail, 208);            // 4 ans de recul suffisent
   G.view.span = Math.min(avail, 62);
   G.view.scale = (G.ser.ohlc[G.decIdx][3] / G.ser.ohlc[sc.start][3] > 4) ? 'log' : 'lin';
+  G.availMax = avail;
   G.gateOK = !G.gateOn;
   G.maxSpanSeen = G.view.span;
   $('#t-round').textContent = 'MANCHE '+(G.round+1)+' / '+G.decs.length;
@@ -120,8 +121,10 @@ function zoom(dir){
 }
 function updateGate(){
   const sp = G.view.span, an = sp/52;
-  $('#t-span').textContent = an>=1.6 ? an.toFixed(1).replace('.',',')+' ANS'
+  const duree = an>=1.6 ? (an>=10?Math.round(an):an.toFixed(1).replace('.',','))+' ANS'
               : an>=0.95 ? '1 AN' : Math.round(sp/4.33)+' MOIS';
+  const u = Chart.uniteVisible ? Chart.uniteVisible() : '';
+  $('#t-span').textContent = duree + (u && u!=='SEM.' ? ' · '+u : '');
   $('#b-scale').textContent = G.view.scale==='log' ? 'LOG' : 'LIN';
   if(!G.gateOn || G.maxSpanSeen >= G.reqSpan) G.gateOK = true;
 

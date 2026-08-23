@@ -66,18 +66,29 @@ Le marché se choisit sur l'accueil, en un mot :
 | SECTEURS | tech, énergie, santé, banque, conso, défense |
 | ENTREPRISE | une entreprise précise, choisie par recherche |
 
-**357 cycles** au total, répartis en trois formes pour éviter que tout finisse toujours en hausse :
+**391 cycles** au total, répartis en trois formes pour éviter que tout finisse toujours en hausse :
 
 - **cycle complet** — du sommet au sommet suivant (158)
 - **descente seule** — la partie s'arrête au creux, aucune reprise (65)
 - **après l'euphorie** — on entre en pleine hausse et on finit dans la rechute (134)
 
-Mesuré sur les 357 : **53 % finissent plus haut que la première décision, 47 % plus bas**,
+Mesuré sur l'ensemble : **53 % finissent plus haut que la première décision, 47 % plus bas**,
 médiane +5 %. Le léger biais haussier restant est celui du marché lui-même, pas du jeu. L'actif et la période restent cachés jusqu'à la fin du cycle,
 même quand on choisit l'entreprise soi-même.
 
 Les séries de prix sont chargées à la demande : le catalogue pèse 32 Ko, chaque
 actif environ 50 Ko, et seul l'actif joué est téléchargé.
+
+## Le recul disponible
+
+Chaque partie donne accès à **jusqu'à 20 ans d'historique** avant la première
+décision, quand la donnée existe : médiane 10,7 ans, 207 cycles sur 391 offrent
+10 ans ou plus, 41 en offrent 20.
+
+Le graphique change d'unité en dézoomant, comme une vraie plateforme :
+bougies **hebdomadaires** jusqu'à 6 ans de large, **mensuelles** de 6 à 13 ans,
+**trimestrielles** au-delà. L'unité est affichée à côté de la durée
+(« 20 ANS · TRIM. »). Ce sont toujours de vraies bougies, jamais une ligne.
 
 ## Les niveaux
 

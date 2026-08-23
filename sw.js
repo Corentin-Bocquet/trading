@@ -3,7 +3,7 @@
    installée sur l'écran d'accueil. Incrémente CACHE à chaque
    modification de fichier pour forcer la mise à jour.
    ============================================================ */
-const CACHE = 'trading-v7';
+const CACHE = 'trading-v8';
 const SHELL = [
   'index.html','login.html','signup.html','app.html','profil.html','roulette.html',
   'manifest.webmanifest',
