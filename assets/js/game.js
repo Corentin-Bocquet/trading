@@ -19,6 +19,15 @@ function scenariosDuMarche(m){
   return list.length ? list : CATALOGUE.scenarios;
 }
 
+/* découpe le cycle en N manches régulières, entre 5 et 25 */
+function construireManches(sc, n){
+  const a = sc.decs[0], b = sc.end;
+  const pas = Math.max(2, Math.floor((b-a)/n));
+  const d = [];
+  for(let i=0;i<n;i++) d.push(a + i*pas);
+  return d;
+}
+
 /* difficulté d'un actif : sert à pondérer les récompenses */
 function difficulte(key){
   const v = (CATALOGUE.assets[key]||{}).vol || 30;
@@ -43,7 +52,11 @@ async function startSession(forcedId){
 
   G.sc = sc;
   G.base = G.ser.ohlc[sc.start][3];
-  G.capital = Math.max(SEUIL_RUINE, G.prof.cash || CAPITAL_DEPART);
+  G.decs = construireManches(sc, clamp(Math.round(G.reglages.manches||10), 5, 25));
+  const total = Math.max(SEUIL_RUINE, G.prof.cash || CAPITAL_DEPART);
+  const part = clamp(G.reglages.part||1, 0.05, 1);
+  G.capital = Math.max(1, Math.round(total*part));   // ce qui entre en jeu
+  G.horsJeu = total - G.capital;                     // ce qui reste au chaud
   G.round = 0; G.cash = G.capital; G.units = 0; G.cost = 0;
   G.totSpent = 0; G.totUnits = 0;
   G.actions = []; G.done = false; G.revealPrices = false; G.showMA = false;
@@ -53,7 +66,7 @@ async function startSession(forcedId){
 
 function setupRound(){
   const sc = G.sc;
-  G.decIdx = sc.decs[G.round];
+  G.decIdx = G.decs[G.round];
   G.endVisible = G.decIdx;
   const avail = G.decIdx - sc.start + 1;
   G.reqSpan = Math.min(avail, Math.max(140, Math.floor(avail*0.7)));
@@ -61,7 +74,7 @@ function setupRound(){
   G.view.scale = (G.ser.ohlc[G.decIdx][3] / G.ser.ohlc[sc.start][3] > 4) ? 'log' : 'lin';
   G.gateOK = !G.gateOn;
   G.maxSpanSeen = G.view.span;
-  $('#t-round').textContent = 'MANCHE '+(G.round+1)+' / '+sc.decs.length;
+  $('#t-round').textContent = 'MANCHE '+(G.round+1)+' / '+G.decs.length;
   updateGate(); updateHUD(); Chart.resize(); Chart.draw(); resetCard();
   Audio_.play('whoosh');
 }
@@ -85,7 +98,7 @@ function updateHUD(){
   $('#m-place').textContent = dollars(G.units*p);
   $('#m-bar').style.width   = clamp(G.cash/valeur*100, 0, 100)+'%';
   $('#m-pal').textContent   = nb;
-  $('#t-dots').innerHTML = G.sc.decs.map((_,i)=>
+  $('#t-dots').innerHTML = G.decs.map((_,i)=>
     `<i class="${i<G.round?'done':(i===G.round?'now':'')}"></i>`).join('');
 }
 
@@ -322,13 +335,13 @@ function toast(k, txt){
 function revealNext(){
   G.revealing = true;
   const sc=G.sc, target = Math.min(sc.end,
-    (sc.decs[G.round+1] !== undefined ? sc.decs[G.round+1] : G.decIdx+sc.step));
+    (G.decs[G.round+1] !== undefined ? G.decs[G.round+1] : sc.end));
   clearInterval(G.anim);
   G.anim = setInterval(()=>{
     if(G.endVisible >= target){
       clearInterval(G.anim); G.revealing=false;
       G.round++;
-      if(G.round >= sc.decs.length) endSession(); else setupRound();
+      if(G.round >= G.decs.length) endSession(); else setupRound();
       return;
     }
     G.endVisible++;
@@ -362,13 +375,15 @@ function endSession(){
 
   // --- portefeuille : ce que vaut le compte à la fin du cycle
   const avant  = G.capital;
-  let valeur   = G.cash + G.units*last;
-  const gainCycle = valeur - avant;
+  const enJeu  = G.cash + G.units*last;
+  const gainCycle = enJeu - avant;
+  let valeur = (G.horsJeu||0) + enJeu;              // portefeuille complet
   let ruine = false;
-  if(valeur < SEUIL_RUINE){ ruine = true; G.prof.ruines = (G.prof.ruines||0)+1; valeur = CAPITAL_DEPART; }
+  if(valeur < SEUIL_RUINE){ ruine = true; G.prof.ruines = (G.prof.ruines||0)+1;
+    valeur = CAPITAL_DEPART; }
   G.prof.cash = Math.round(valeur);
 
-  const bh = avant * (last/priceAt(sc.decs[0]));
+  const bh = avant * (last/priceAt(G.decs[0]));
   const bons = G.actions.filter(a=>a.g.k==='exc'||a.g.k==='cor').length;
 
   // --- progression, pondérée par la difficulté de l'actif
@@ -377,6 +392,7 @@ function endSession(){
   G.prof.missions += bons;
   G.prof.rounds   += G.actions.length;
   G.prof.sessions += 1;
+  majSerie();
   const xpGain = Math.max(10, Math.round((25 + Math.max(0,score)*5 + bons*4) * diff));
   G.prof.xp += xpGain;
   G.prof.level = niveauDe(G.prof.missions);
@@ -388,8 +404,8 @@ function endSession(){
   G.hist.push(rec); saveLocal();
   Cloud.saveSession(rec, {score, zPru, bonus, valeur, bh, buys:buys.length, diff});
 
-  renderResult({sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur,bh,xpGain,bons,
-                avant,gainCycle,ruine,diff});
+  renderResult({sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur:enJeu,bh,xpGain,bons,
+                avant,gainCycle,ruine,diff,horsJeu:G.horsJeu||0});
   show('s-result');
   if(monte) setTimeout(()=>levelUpAnim(G.prof.level), 700);
 }

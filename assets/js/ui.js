@@ -40,43 +40,67 @@ function avatar(nom, photo){
 }
 
 const MESURES = {
-  argent: {nom:'ARGENT',
+  argent: {jeu:'trading', nom:'ARGENT',
     val: u => dollars(u.cash!=null?u.cash:CAPITAL_DEPART),
     tri: (a,b) => (b.cash||0)-(a.cash||0),
-    phrase:'Ce qu’il reste dans le portefeuille aujourd’hui. Tout le monde a commencé avec 10 000 $.'},
-  gain:   {nom:'GAIN',
+    mien: () => dollars(G.prof.cash),
+    phrase:'Ce qu’il reste dans le portefeuille de trading. Tout le monde a commencé avec 10 000 $.'},
+  gain:   {jeu:'trading', nom:'GAIN',
     val: u => (gainDe(u)>=0?'+':'−')+'$'+fmt(Math.abs(gainDe(u))),
     tri: (a,b) => gainDe(b)-gainDe(a),
-    phrase:'Tout ce que le joueur a gagné ou perdu depuis son tout premier cycle, remises à zéro comprises.'},
-  decisions:{nom:'DÉCISIONS',
+    mien: () => (gainDe(G.prof)>=0?'+':'−')+'$'+fmt(Math.abs(gainDe(G.prof))),
+    phrase:'Tout ce que le joueur a gagné ou perdu en trading depuis son premier cycle, remises à zéro comprises.'},
+  decisions:{jeu:'trading', nom:'DÉCISIONS',
     val: u => precisionDe(u)!=null ? precisionDe(u)+' %' : '—',
     tri: (a,b) => { const pa=precisionDe(a),pb=precisionDe(b);
       if(pa==null&&pb==null) return b.xp-a.xp;
       if(pa==null) return 1; if(pb==null) return -1; return pb-pa; },
-    phrase:'Sur 100 décisions prises, combien étaient posées dans la bonne zone du cycle. Compté à partir de '+MIN_DECISIONS+' décisions.'}
+    mien: () => precisionDe(G.prof)!=null ? precisionDe(G.prof)+' %' : 'pas encore classé',
+    phrase:'Sur 100 décisions prises, combien étaient posées dans la bonne zone du cycle. Compté à partir de '+MIN_DECISIONS+' décisions.'},
+
+  caisse: {jeu:'roulette', nom:'CAISSE',
+    val: u => fmt(u.cashRl!=null?u.cashRl:RL_DEPART)+' €',
+    tri: (a,b) => (b.cashRl||0)-(a.cashRl||0),
+    mien: () => fmt(G.prof.cashRl)+' €',
+    phrase:'Ce qu’il reste dans la caisse roulette. Tout le monde a commencé avec 50 €.'},
+  gainrl: {jeu:'roulette', nom:'GAIN',
+    val: u => (gainRlDe(u)>=0?'+':'−')+fmt(Math.abs(gainRlDe(u)))+' €',
+    tri: (a,b) => gainRlDe(b)-gainRlDe(a),
+    mien: () => (gainRlDe(G.prof)>=0?'+':'−')+fmt(Math.abs(gainRlDe(G.prof)))+' €',
+    phrase:'Gagné ou perdu à la roulette depuis le début. Sur la durée ce chiffre baisse pour tout le monde : c’est mathématique, la banque garde 2,7 % de chaque mise.'},
+  tours:  {jeu:'roulette', nom:'TOURS',
+    val: u => fmt(u.toursRl||0),
+    tri: (a,b) => (b.toursRl||0)-(a.toursRl||0),
+    mien: () => fmt(G.prof.toursRl||0),
+    phrase:'Nombre de tours de roulette joués. Ça ne mesure pas l’adresse, seulement l’appétit.'}
 };
 
-function badgeRuines(u){
-  const r = u.ruines||0;
-  return r ? `<span class="ruine" title="a tout perdu ${r} fois">${r} RUINE${r>1?'S':''}</span>` : '';
+function badgeRuines(u, jeu){
+  const r = jeu==='roulette' ? (u.ruinesRl||0) : (u.ruines||0);
+  return r ? `<span class="ruine">${r} RUINE${r>1?'S':''}</span>` : '';
+}
+function badgeSerie(u){
+  const s = u.streak||0;
+  return s>=2 ? `<span class="serie">SÉRIE ${s}</span>` : '';
 }
 
 function leaderboard(list, rang, demo, moi, mesure, tout){
   mesure = MESURES[mesure] ? mesure : 'argent';
-  const M = MESURES[mesure];
+  const M = MESURES[mesure], jeu = M.jeu;
   const tri = list.slice().sort(M.tri);
   const estMoi = u => moi && u.pseudo===moi.pseudo && u.xp===moi.xp;
+  const badges = u => badgeRuines(u,jeu) + badgeSerie(u);
 
   const pill = (u,i)=>`
-    <div class="lbrow r${i+1}${estMoi(u)?' me':''}">
+    <div class="lbrow r${i+1}${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badgeRuines(u)}</div>
+      <div class="nm">${u.pseudo}${badges(u)}</div>
       <div class="pt">${M.val(u)} ${SPARK}</div>
     </div>`;
   const ligne = (u,i)=>`
-    <div class="lbline${estMoi(u)?' me':''}">
+    <div class="lbline${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badgeRuines(u)}</div>
+      <div class="nm">${u.pseudo}${badges(u)}</div>
       <div class="pt">${M.val(u)}</div>
     </div>`;
 
@@ -85,14 +109,64 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
     : `<div class="lbwrap"><div class="lbstack">${tri.slice(0,5).map(pill).join('')}</div></div>`;
 
   const monRang = tri.findIndex(estMoi)+1;
-  const maVal = M.val(G.prof);
+  const jeux = `<div class="lbtabs jeux2">
+      <b data-j="trading" class="${jeu==='trading'?'on':''}">TRADING</b>
+      <b data-j="roulette" class="${jeu==='roulette'?'on':''}">ROULETTE</b></div>`;
   const onglets = `<div class="lbtabs">` +
-    Object.keys(MESURES).map(k=>`<b data-k="${k}" class="${k===mesure?'on':''}">${MESURES[k].nom}</b>`).join('') +
+    Object.keys(MESURES).filter(k=>MESURES[k].jeu===jeu)
+      .map(k=>`<b data-k="${k}" class="${k===mesure?'on':''}">${MESURES[k].nom}</b>`).join('') +
     `</div>`;
   const bouton = `<button class="lbmore" id="b-lbmore">${tout?'RÉDUIRE':'VOIR TOUT LE CLASSEMENT'}</button>`;
-  const rank = `<div class="lbme">TON RANG : ${monRang>0?'#'+monRang:'non classé'} · ${maVal}</div>`;
+  const rank = `<div class="lbme">TON RANG : ${monRang>0?'#'+monRang:'non classé'} · ${M.mien()}</div>`;
   const dem = demo?expl('Classement de démonstration. Crée un compte pour être classé face aux vrais joueurs.'):'';
-  return onglets + corps + rank + bouton + expl(M.phrase) + dem;
+  return jeux + onglets + corps + rank + bouton
+       + expl(M.phrase + ' Appuie sur un joueur pour voir sa fiche.')
+       + expl('Le badge <b>SÉRIE</b> est le nombre de jours d’affilée où le joueur est venu jouer, au trading ou à la roulette.')
+       + dem;
+}
+
+/* --- fiche d'un joueur, ouverte depuis le classement --- */
+async function ouvrirFiche(pseudo, liste){
+  const u = (liste||[]).find(x=>x.pseudo===pseudo);
+  if(!u) return;
+  const el = $('#fiche'); if(!el) return;
+  const prec = precisionDe(u);
+  el.innerHTML = `<div class="inner">
+    <div class="phead">
+      ${avatar(u.pseudo,u.avatar).replace('class="av"','class="av gros"').replace('class="av photo"','class="av photo gros"')}
+      <div class="pinfo"><div class="prow"><span>${u.pseudo}</span></div>
+        <div class="note">niveau ${u.level||1} · ${fmt(u.xp||0)} XP${u.streak?` · série ${u.streak} j`:''}</div></div>
+      <button class="wordbtn sm" id="f-close">FERMER</button>
+    </div>
+    <div class="statgrid" style="margin-top:16px">
+      <div><u>TRADING</u><b>${dollars(u.cash!=null?u.cash:CAPITAL_DEPART)}</b></div>
+      <div><u>GAIN</u><b>${(gainDe(u)>=0?'+':'−')}$${fmt(Math.abs(gainDe(u)))}</b></div>
+      <div><u>DÉCISIONS</u><b>${prec!=null?prec+' %':'—'}</b></div>
+      <div><u>ROULETTE</u><b>${fmt(u.cashRl!=null?u.cashRl:RL_DEPART)} €</b></div>
+      <div><u>TOURS</u><b>${fmt(u.toursRl||0)}</b></div>
+      <div><u>RUINES</u><b>${(u.ruines||0)+(u.ruinesRl||0)}</b></div>
+    </div>
+    <h2>Son argent dans le temps</h2>
+    <canvas id="f-courbe" style="width:100%;height:150px;display:block"></canvas>
+    <h2>Ses derniers cycles</h2>
+    <div id="f-hist"><p class="note">Chargement…</p></div>
+  </div>`;
+  el.classList.add('on');
+  $('#f-close').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); };
+
+  const h = await Cloud.sessionsDe(pseudo);
+  courbeArgent('f-courbe', h);
+  $('#f-hist').innerHTML = h.slice().reverse().slice(0,12).map(x=>`
+    <div class="kv"><span>${nomActif(x.a)}
+      <span style="color:var(--dim)">· ${new Date(x.t).toLocaleDateString('fr-FR')}</span></span>
+    <b style="color:${x.gain>=0?'#5fe8b6':'#ff9098'}">${x.gain>=0?'+':'−'}$${fmt(Math.abs(x.gain))}</b></div>`
+  ).join('') || '<p class="note">Aucun cycle enregistré.</p>';
+}
+
+function brancherLignes(liste){
+  $$('.lbrow[data-p],.lbline[data-p]').forEach(r=>{
+    r.onclick = ()=>{ Audio_.play('click'); ouvrirFiche(decodeURIComponent(r.dataset.p), liste); };
+  });
 }
 
 /* --- montée de niveau --- */
@@ -114,17 +188,17 @@ function levelUpAnim(n){
 }
 
 /* --- courbe : l'argent du portefeuille dans le temps --- */
-function calibCanvas(){
+function courbeArgent(id, hist){
   setTimeout(()=>{
-    const c=document.getElementById('calib'); if(!c) return;
+    const c=document.getElementById(id); if(!c) return;
     const dpr=Math.min(devicePixelRatio||1,2.5), r=c.getBoundingClientRect();
     c.width=r.width*dpr; c.height=r.height*dpr;
     const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
     const H=r.height,W=r.width;
-    const d=G.hist.slice(-24).filter(v=>v.cash!=null);
+    const d=(hist||[]).slice(-24).filter(v=>v.cash!=null);
     x.clearRect(0,0,W,H);
     if(d.length<1){ x.fillStyle='#5b626e'; x.font='13px sans-serif'; x.textAlign='center';
-      x.fillText('Joue quelques cycles pour voir ta courbe', W/2, H/2); return; }
+      x.fillText('Aucun cycle joué pour l’instant', W/2, H/2); return; }
     const vals=[CAPITAL_DEPART,...d.map(v=>v.cash)];
     const lo=Math.min(...vals)*.92, hi=Math.max(...vals)*1.08;
     const px=i=> d.length===1? W/2 : 14+i*(W-28)/(d.length-1);
@@ -141,6 +215,7 @@ function calibCanvas(){
       x.beginPath(); x.arc(px(i),py(v.cash),3.6,0,7); x.fill(); });
   },30);
 }
+function calibCanvas(){ courbeArgent('calib', G.hist); }
 
 /* ============================================================
    BILAN — version SIMPLE
@@ -157,7 +232,7 @@ function renderResultSimple(R){
   <div class="sres">
     <div class="pastilles">${pastilles}</div>
     <div class="asset">${ser.nom}</div>
-    <div class="years">${an(sc.decs[0])} → ${an(sc.end)}<span style="opacity:.45"> · creux ${an(sc.tr)}</span></div>
+    <div class="years">${an(G.decs[0])} → ${an(sc.end)}<span style="opacity:.45"> · creux ${an(sc.tr)}</span></div>
 
     <div class="mult" style="color:${perf>=0?'#5fe8b6':'#ff9098'}">${perf>=0?'+':'−'}${Math.abs(perf).toFixed(0)} %</div>
     <div class="xp">${gainCycle>=0?'+':'−'}$${fmt(Math.abs(gainCycle))} sur ce cycle</div>
@@ -189,7 +264,9 @@ function renderResultSimple(R){
 }
 
 function brancherBilan(sc){
-  $('#b-again').onclick    = ()=>{ Audio_.play('click'); startSession(); };
+  $('#b-again').onclick    = ()=>{ Audio_.play('click');
+    if(typeof peindreSetup==='function') peindreSetup();
+    show('s-setup'); };
   $('#b-seechart').onclick = ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
     G.endVisible = sc.end; show('s-game'); Chart.resize(); Chart.draw(); };
   $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
@@ -203,7 +280,7 @@ function renderResult(R){
   const {sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur,bh,xpGain,bons,
          avant,gainCycle,ruine,diff}=R;
   const v = verdictGlobal(score);
-  const d0 = ser.dates[sc.decs[0]], d1 = ser.dates[sc.end];
+  const d0 = ser.dates[G.decs[0]], d1 = ser.dates[sc.end];
   const isBTC = sc.a==='BTC';
 
   const ligne = a => {

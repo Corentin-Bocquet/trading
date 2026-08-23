@@ -17,9 +17,14 @@
     if(G.prof.avatar){ av.style.backgroundImage = `url('${G.prof.avatar}')`; av.textContent=''; }
     else { av.style.backgroundImage='none'; av.textContent=(G.prof.pseudo||'?')[0].toUpperCase(); }
     const g = gainDe(G.prof);
-    $('#p-wallet').innerHTML = `<u>TON PORTEFEUILLE</u><b>${dollars(G.prof.cash)}</b>
+    $('#p-wallet').innerHTML = `<u>TRADING</u><b>${dollars(G.prof.cash)}</b>
       <i style="color:${g>=0?'#5fe8b6':'#ff9098'}">${g>=0?'+':'−'}$${fmt(Math.abs(g))} depuis le début</i>
       ${G.prof.ruines?`<span class="ruine big">${G.prof.ruines} RUINE${G.prof.ruines>1?'S':''}</span>`:''}`;
+    const w2 = $('#p-wallet-rl');
+    if(w2){ const gr = gainRlDe(G.prof);
+      w2.innerHTML = `<u>ROULETTE</u><b>${fmt(G.prof.cashRl)} €</b>
+      <i style="color:${gr>=0?'#5fe8b6':'#ff9098'}">${gr>=0?'+':'−'}${fmt(Math.abs(gr))} € · ${fmt(G.prof.toursRl||0)} tours</i>
+      ${G.prof.ruinesRl?`<span class="ruine big">${G.prof.ruinesRl} RUINE${G.prof.ruinesRl>1?'S':''}</span>`:''}`; }
   }
   entete();
   $('#p-mission').innerHTML = missionBar();
@@ -118,13 +123,19 @@
   function rendreClassement(){
     if(!LB) return;
     $('#p-lb').innerHTML = leaderboard(LB.list, LB.rank, LB.demo, LB.moi, mesure, tout);
-    $$('.lbtabs b').forEach(b=>{
+    $$('.lbtabs b[data-k]').forEach(b=>{
       b.onclick=()=>{ if(mesure===b.dataset.k) return;
         Audio_.play('click'); mesure=b.dataset.k;
         localStorage.setItem('cyc_mesure',mesure); rendreClassement(); };
     });
+    $$('.lbtabs b[data-j]').forEach(b=>{
+      b.onclick=()=>{ Audio_.play('click');
+        mesure = b.dataset.j==='roulette' ? 'caisse' : 'argent';
+        localStorage.setItem('cyc_mesure',mesure); rendreClassement(); };
+    });
     const more=$('#b-lbmore');
     if(more) more.onclick=()=>{ Audio_.play('click'); tout=!tout; rendreClassement(); };
+    brancherLignes(LB.list);
   }
   LB = await Cloud.leaderboard();
   rendreClassement();

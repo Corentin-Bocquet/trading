@@ -50,6 +50,45 @@ function halvingInfo(iso){
     joursAvant : next ? Math.round((new Date(next).getTime()-t)/864e5) : null};
 }
 
+/* ---------- roulette européenne : 37 cases, un seul zéro ---------- */
+const RL_DEPART = 50;                       // 50 € pour tout le monde
+const RL_ORDRE = [0,32,15,19,4,21,2,25,17,34,6,27,13,36,11,30,8,23,10,
+                  5,24,16,33,1,20,14,31,9,22,18,29,7,28,12,35,3,26];
+const RL_ROUGES = new Set([1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36]);
+const couleurDe = n => n===0 ? 'vert' : (RL_ROUGES.has(n) ? 'rouge' : 'noir');
+const RL_ALPHA = '0123456789abcdefghijklmnopqrstuvwxyzA';   // 37 caractères
+const encodeSpins = arr => arr.map(n=>RL_ALPHA[n]).join('');
+const decodeSpins = s => (s||'').split('').map(c=>RL_ALPHA.indexOf(c)).filter(n=>n>=0);
+
+/* mises reconnues et ce qu'elles rapportent (mise comprise) */
+const RL_MISES = {
+  rouge:{p:1,nom:'ROUGE'},   noir:{p:1,nom:'NOIR'},
+  pair:{p:1,nom:'PAIR'},     impair:{p:1,nom:'IMPAIR'},
+  manque:{p:1,nom:'1 À 18'}, passe:{p:1,nom:'19 À 36'},
+  d1:{p:2,nom:'1 À 12'}, d2:{p:2,nom:'13 À 24'}, d3:{p:2,nom:'25 À 36'},
+  c1:{p:2,nom:'COLONNE 1'}, c2:{p:2,nom:'COLONNE 2'}, c3:{p:2,nom:'COLONNE 3'}
+};
+function gainMise(cle, n){
+  if(cle[0]==='n') return (+cle.slice(1)===n) ? 35 : 0;
+  if(n===0) return 0;
+  switch(cle){
+    case 'rouge':  return couleurDe(n)==='rouge' ? 1 : 0;
+    case 'noir':   return couleurDe(n)==='noir'  ? 1 : 0;
+    case 'pair':   return n%2===0 ? 1 : 0;
+    case 'impair': return n%2===1 ? 1 : 0;
+    case 'manque': return n<=18 ? 1 : 0;
+    case 'passe':  return n>=19 ? 1 : 0;
+    case 'd1': return n<=12 ? 2 : 0;
+    case 'd2': return (n>=13&&n<=24) ? 2 : 0;
+    case 'd3': return n>=25 ? 2 : 0;
+    case 'c1': return n%3===1 ? 2 : 0;
+    case 'c2': return n%3===2 ? 2 : 0;
+    case 'c3': return n%3===0 ? 2 : 0;
+  }
+  return 0;
+}
+const nomMise = c => c[0]==='n' ? ('N° '+c.slice(1)) : (RL_MISES[c]||{nom:c}).nom;
+
 /* ---------- règles du jeu ---------- */
 const CAPITAL_DEPART = 10000;   // tout le monde démarre avec 10 000 $
 const SEUIL_RUINE    = 500;     // en dessous, le portefeuille est considéré perdu
@@ -68,7 +107,9 @@ const G = {
   gateOn:false,               // obligation de dézoomer : désactivée par défaut
   marche:{cat:'tout'},        // catégorie de marché choisie
   prof:{pseudo:'Toi', avatar:null, level:1, xp:0, best:0, missions:0, rounds:0,
-        sessions:0, cash:CAPITAL_DEPART, ruines:0},
+        sessions:0, cash:CAPITAL_DEPART, ruines:0,
+        cashRl:RL_DEPART, ruinesRl:0, toursRl:0, spins:[], streak:0, jour:null},
+  reglages:{part:1, manches:10},   // part du portefeuille engagée, nombre de manches
   hist:[],
   sc:null, ser:null, capital:CAPITAL_DEPART,
   round:0, cash:CAPITAL_DEPART, units:0, cost:0, totSpent:0, totUnits:0,
@@ -90,6 +131,19 @@ function precisionDe(p){
 function gainDe(p){
   return (p.cash||CAPITAL_DEPART) - CAPITAL_DEPART*(1+(p.ruines||0));
 }
+function gainRlDe(p){
+  return (p.cashRl!=null?p.cashRl:RL_DEPART) - RL_DEPART*(1+(p.ruinesRl||0));
+}
+
+/* série de jours : incrémentée une fois par jour, quel que soit le jeu */
+function majSerie(){
+  const auj = new Date().toISOString().slice(0,10);
+  if(G.prof.jour === auj) return false;
+  const hier = new Date(Date.now()-864e5).toISOString().slice(0,10);
+  G.prof.streak = (G.prof.jour === hier) ? (G.prof.streak||0)+1 : 1;
+  G.prof.jour = auj;
+  return true;
+}
 
 /* ---------- persistance locale (cache hors ligne) ---------- */
 function saveLocal(){
@@ -99,13 +153,17 @@ function saveLocal(){
     localStorage.setItem('cyc_mode', G.mode);
     localStorage.setItem('cyc_gate', G.gateOn?'1':'0');
     localStorage.setItem('cyc_marche', JSON.stringify(G.marche));
+    localStorage.setItem('cyc_reglages', JSON.stringify(G.reglages));
   }catch(e){}
 }
 function loadLocal(){
   try{
     const p = JSON.parse(localStorage.getItem('cyc_prof')||'null');
     if(p) G.prof = {missions:0, rounds:0, sessions:0, best:0, avatar:null,
-                    cash:CAPITAL_DEPART, ruines:0, ...p};
+                    cash:CAPITAL_DEPART, ruines:0, cashRl:RL_DEPART, ruinesRl:0,
+                    toursRl:0, spins:[], streak:0, jour:null, ...p};
+    const rg = JSON.parse(localStorage.getItem('cyc_reglages')||'null');
+    if(rg) G.reglages = {part:1, manches:10, ...rg};
     G.hist  = JSON.parse(localStorage.getItem('cyc_hist')||'[]');
     G.token = localStorage.getItem('cyc_tok')||null;
     const m = localStorage.getItem('cyc_mode');

@@ -90,8 +90,15 @@
     };
   }
 
+  function majJeux(){
+    const t=$('#j-trading'), r=$('#j-roulette');
+    if(t) t.textContent = dollars(G.prof.cash);
+    if(r) r.textContent = fmt(G.prof.cashRl)+' €';
+  }
+  majJeux();
+
   if(G.token) connecte(); else deconnecte();
   const up = await Cloud.ping();
   if(!up){ G.token ? horsLigneConnu() : horsLigneInconnu(); return; }
-  if(G.token){ (await Cloud.restore()) ? connecte() : deconnecte(); }
+  if(G.token){ (await Cloud.restore()) ? connecte() : deconnecte(); majJeux(); }
 })();

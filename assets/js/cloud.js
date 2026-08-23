@@ -50,7 +50,10 @@ const Cloud = (() => {
               rounds:p.total_calls || 0,                // décisions au total (0 = pas encore mesuré)
               sessions:p.sessions_played,
               cash:p.cash!=null ? +p.cash : CAPITAL_DEPART,
-              ruines:p.ruines||0};
+              ruines:p.ruines||0,
+              cashRl:p.cash_rl!=null ? +p.cash_rl : RL_DEPART,
+              ruinesRl:p.ruines_rl||0, toursRl:p.tours_rl||0,
+              spins:decodeSpins(p.spins), streak:p.streak||0, jour:p.dernier_jour||null};
     // l'historique des scores sert à la courbe de calibration
     const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+uid+'&select=*&order=created_at.asc&limit=60');
     let prec = CAPITAL_DEPART;
@@ -72,6 +75,7 @@ const Cloud = (() => {
         body:JSON.stringify({level:G.prof.level, xp:G.prof.xp, best_score:Math.round(G.prof.best),
           rounds_played:G.prof.missions, total_calls:G.prof.rounds,
           sessions_played:G.prof.sessions, cash:Math.round(G.prof.cash), ruines:G.prof.ruines,
+          streak:G.prof.streak||0, dernier_jour:G.prof.jour,
           updated_at:new Date().toISOString()})});
       await api('/rest/v1/cyc_sessions', {method:'POST', body:JSON.stringify({
         user_id:G.user.id, scenario_id:rec.id, asset:rec.a, score:Math.round(rec.score),
@@ -81,17 +85,52 @@ const Cloud = (() => {
     }catch(e){ console.warn('sync', e.message); }
   }
 
-  const DEMO = [{pseudo:'Anna',xp:12400,level:9,missions:214,rounds:248,cash:31200,ruines:0},
-                {pseudo:'Sam',xp:8600,level:7,missions:139,rounds:181,cash:18400,ruines:1},
-                {pseudo:'Nariman',xp:5100,level:5,missions:78,rounds:112,cash:12750,ruines:0},
-                {pseudo:'Caleb',xp:2450,level:3,missions:31,rounds:60,cash:6300,ruines:2},
-                {pseudo:'Iris',xp:1200,level:2,missions:12,rounds:29,cash:9100,ruines:0}];
+  // sauvegarde de la roulette : caisse, ruines, tours et suite des numéros
+  let fileRl = null;
+  async function saveRoulette(){
+    saveLocal();
+    if(!G.token || G.sbUp===false) return;
+    clearTimeout(fileRl);
+    fileRl = setTimeout(async ()=>{     // on regroupe les envois : un tour dure 6 s
+      try{
+        if(!G.user) await restore();
+        await api('/rest/v1/cyc_profiles?id=eq.'+G.user.id, {method:'PATCH',
+          body:JSON.stringify({cash_rl:Math.round(G.prof.cashRl), ruines_rl:G.prof.ruinesRl,
+            tours_rl:G.prof.toursRl, spins:encodeSpins(G.prof.spins||[]),
+            streak:G.prof.streak||0, dernier_jour:G.prof.jour,
+            updated_at:new Date().toISOString()})});
+      }catch(e){ console.warn('roulette', e.message); }
+    }, 900);
+  }
+
+  // historique public d'un autre joueur, pour la fiche du classement
+  async function sessionsDe(pseudo){
+    try{
+      const rows = await api('/rest/v1/cyc_profiles?select=id&pseudo=eq.'+encodeURIComponent(pseudo)+'&limit=1');
+      if(!rows||!rows.length) return [];
+      const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+rows[0].id
+        +'&select=created_at,asset,score,xp_gained,cash_after&order=created_at.asc&limit=60');
+      let prec = CAPITAL_DEPART;
+      return (s||[]).map(x=>{ const cash=x.cash_after!=null?+x.cash_after:null;
+        const gain=cash!=null?cash-prec:0; if(cash!=null) prec=cash;
+        return {t:new Date(x.created_at).getTime(), a:x.asset, score:+x.score,
+                xp:x.xp_gained, cash, gain}; });
+    }catch(e){ return []; }
+  }
+
+  const DEMO = [{pseudo:'Anna',xp:12400,level:9,missions:214,rounds:248,cash:31200,ruines:0,cashRl:118,ruinesRl:0,toursRl:210,streak:12},
+                {pseudo:'Sam',xp:8600,level:7,missions:139,rounds:181,cash:18400,ruines:1,cashRl:12,ruinesRl:3,toursRl:640,streak:4},
+                {pseudo:'Nariman',xp:5100,level:5,missions:78,rounds:112,cash:12750,ruines:0,cashRl:64,ruinesRl:1,toursRl:95,streak:7},
+                {pseudo:'Caleb',xp:2450,level:3,missions:31,rounds:60,cash:6300,ruines:2,cashRl:31,ruinesRl:0,toursRl:40,streak:1},
+                {pseudo:'Iris',xp:1200,level:2,missions:12,rounds:29,cash:9100,ruines:0,cashRl:50,ruinesRl:0,toursRl:0,streak:2}];
   async function leaderboard(){
     if(G.token && G.sbUp!==false){
       try{
-        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls,cash,ruines&order=cash.desc&limit=40', {});
+        const rows = await api('/rest/v1/cyc_profiles?select=pseudo,level,xp,avatar,rounds_played,total_calls,cash,ruines,cash_rl,ruines_rl,tours_rl,streak&order=cash.desc&limit=40', {});
         (rows||[]).forEach(r=>{ r.missions=r.rounds_played; r.rounds=r.total_calls||0;
-          r.cash = r.cash!=null ? +r.cash : CAPITAL_DEPART; r.ruines = r.ruines||0; });
+          r.cash = r.cash!=null ? +r.cash : CAPITAL_DEPART; r.ruines = r.ruines||0;
+          r.cashRl = r.cash_rl!=null ? +r.cash_rl : RL_DEPART;
+          r.ruinesRl = r.ruines_rl||0; r.toursRl = r.tours_rl||0; r.streak = r.streak||0; });
         if(rows && rows.length){
           return {list:rows, rank:0, moi:{pseudo:G.prof.pseudo, xp:G.prof.xp,
                   cash:G.prof.cash, ruines:G.prof.ruines,
@@ -101,7 +140,8 @@ const Cloud = (() => {
     }
     const moi = {pseudo:G.prof.pseudo, xp:G.prof.xp, level:G.prof.level, avatar:G.prof.avatar,
                  missions:G.prof.missions, rounds:G.prof.rounds,
-                 cash:G.prof.cash, ruines:G.prof.ruines};
+                 cash:G.prof.cash, ruines:G.prof.ruines, cashRl:G.prof.cashRl,
+                 ruinesRl:G.prof.ruinesRl, toursRl:G.prof.toursRl, streak:G.prof.streak};
     const list = [...DEMO, moi].sort((a,b)=>b.xp-a.xp);
     return {list, rank:list.indexOf(moi)+1, demo:true, moi};
   }
@@ -161,7 +201,7 @@ const Cloud = (() => {
   }
 
   return {
-    ping, saveProfil, savePush, removePush,
+    ping, saveProfil, savePush, removePush, saveRoulette, sessionsDe,
     signup: async (m,p,ps)=>{ const j=await auth('signup',{email:m,password:p,data:{pseudo:ps}});
       if(!j.access_token && j.id){ const k=await auth('token?grant_type=password',{email:m,password:p});
         return afterAuth(k,ps); } return afterAuth(j,ps); },

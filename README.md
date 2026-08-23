@@ -4,6 +4,46 @@ Application web (PWA) d'entraînement à la lecture des cycles boursiers.
 Le principe : on ne tope jamais le point exact, on reconnaît une **zone**,
 on **dézoome**, et on **fractionne** ses entrées et ses sorties par paliers.
 
+## Deux jeux, un seul compte
+
+L'accueil ouvre sur deux onglets : **TRADING** et **ROULETTE**. Même compte, même
+pseudo, même photo, même série de jours — mais **deux portefeuilles séparés**
+(10 000 $ au trading, 50 € à la roulette) et **deux classements séparés**.
+
+### Roulette
+
+Roulette européenne : 37 cases, un seul zéro. La roue est dessinée au canvas,
+la bille tourne en sens inverse, ralentit, rebondit sur les déflecteurs et se pose
+dans la case. **Le numéro est tiré avant l'animation** par `crypto.getRandomValues`,
+avec rejet du modulo pour éviter tout biais : la bille rejoint une case déjà décidée.
+
+Mises acceptées : numéro plein (paie 35), douzaine et colonne (paient 2), rouge,
+noir, pair, impair, 1 à 18, 19 à 36 (paient 1). Les jetons vont de 1 € à 25 €.
+Le mode SIMPLE masque les douzaines et les colonnes.
+
+Statistiques sur les 100, 1 000 ou 10 000 derniers tours du joueur, plus les
+30 derniers numéros affichés. **L'app dit clairement que ces chiffres ne prédisent
+rien** : chaque tour est indépendant et la banque garde 2,7 % de chaque mise.
+C'est le contraire exact du trading, où les cycles ont une forme.
+
+Caisse à zéro : recapitalisation à 50 € et compteur de ruines incrémenté.
+
+## Réglages avant chaque partie de trading
+
+Avant de lancer un cycle, deux curseurs :
+
+- **Ce que tu engages** — de 5 % à 100 % du portefeuille (100 % par défaut).
+  Le reste est mis de côté et ne bouge pas.
+- **Nombre de manches** — de 5 à 25, par pas de 1 (10 par défaut).
+  Le cycle est découpé en autant de moments de décision.
+
+## Classements et fiches
+
+Deux onglets de jeu, puis les mesures propres à chaque jeu. **Appuyer sur un joueur
+ouvre sa fiche** : ses chiffres des deux jeux, sa courbe d'argent et ses derniers
+cycles. Un badge **SÉRIE** indique le nombre de jours d'affilée où il est venu jouer,
+au trading comme à la roulette.
+
 ## Deux modes, une seule progression
 
 Bascule **SIMPLE / PRO** en haut de chaque écran. Même compte, même portefeuille,

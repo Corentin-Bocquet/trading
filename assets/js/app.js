@@ -43,5 +43,26 @@
   window.addEventListener('resize', ()=>{ if(G.sc){ Chart.resize(); Chart.draw(); } });
 
   if(G.token){ try{ await Cloud.restore(); }catch(e){} applyMode(); }
-  startSession();
+
+  // --- écran de réglages : part engagée et nombre de manches
+  const sp=$('#su-part'), sm=$('#su-manches');
+  sp.value = Math.round((G.reglages.part||1)*100);
+  sm.value = G.reglages.manches||10;
+  function peindreSetup(){
+    const part = +sp.value/100, dispo = G.prof.cash||CAPITAL_DEPART;
+    $('#su-partv').textContent = sp.value+' %';
+    $('#su-manchesv').textContent = sm.value;
+    $('#su-cash').textContent = dollars(dispo);
+    $('#su-marche').textContent = NOM_MARCHE(G.marche);
+    $('#su-parte').textContent = dollars(Math.round(dispo*part))+' en jeu, '
+      + dollars(Math.round(dispo*(1-part)))+' mis de côté';
+  }
+  window.peindreSetup = peindreSetup;
+  sp.oninput = peindreSetup; sm.oninput = peindreSetup;
+  peindreSetup();
+  $('#su-go').onclick = ()=>{
+    Audio_.play('click');
+    G.reglages = {part:+sp.value/100, manches:+sm.value};
+    saveLocal(); startSession();
+  };
 })();
