@@ -66,12 +66,8 @@ function nouvelleTable(){
 }
 
 function nouvelleMain(){
-  if(PK.joueurs[0].tapis < PK.blinde){
-    PK.joueurs[0].tapis = PK_DEPART;
-    G.prof.ruinesPk = (G.prof.ruinesPk||0)+1; G.prof.cashPk = PK_DEPART;
-    messagePK('Tu as tout perdu. Cave remise à ' + PK_DEPART + ' €.');
-  }
-  PK.joueurs.forEach(j=>{ if(j.tapis<=0) j.tapis = 500; });   // les adversaires se recavent
+  if(PK.joueurs[0].tapis < PK.blinde){ PK.joueurs[0].tapis = PK_DEPART; G.prof.cashPk = PK_DEPART; }
+  PK.joueurs.forEach(j=>{ if(j.tapis < PK.blinde) j.tapis = 500; });   // les adversaires se recavent
   PK.sabot = nouveauSabot(1);
   PK.commune = []; PK.pot = 0; PK.tour='preflop'; PK.fini=false;
   PK.bouton = (PK.bouton+1) % 4;
@@ -179,12 +175,21 @@ function finirMain(){
       + ' — ' + PK.pot + ' €');
   }
 
-  G.prof.cashPk = Math.max(0, Math.round(PK.joueurs[0].tapis));
-  G.prof.mainsPk = (G.prof.mainsPk||0)+1;
   const delta = PK.joueurs[0].tapis - avant;
+  G.prof.mainsPk = (G.prof.mainsPk||0)+1;
+
+  // ruine constatée tout de suite : on ne laisse pas une cave vide traîner
+  let ruine = false;
+  if(PK.joueurs[0].tapis < PK.blinde){
+    ruine = true;
+    G.prof.ruinesPk = (G.prof.ruinesPk||0)+1;
+    PK.joueurs[0].tapis = PK_DEPART;
+    lignes.push('Tu as tout perdu : cave remise à ' + PK_DEPART + ' €');
+  }
+  G.prof.cashPk = Math.round(PK.joueurs[0].tapis);
   majSerie(); saveLocal(); Cloud.saveJeu('poker');
   Audio_.play(delta>0?'win':'fail');
-  peindrePK(lignes.join(' · '), delta);
+  peindrePK(lignes.join(' · '), delta, ruine);
 }
 
 /* ---------- adversaires ---------- */
@@ -220,7 +225,7 @@ function messagePK(t){
   clearTimeout(window._pm); window._pm=setTimeout(()=>e.classList.remove('on'),3000);
 }
 
-function peindrePK(resume, delta){
+function peindrePK(resume, delta, ruine){
   $('#pk-pot').textContent = PK.pot + ' €';
   $('#pk-tour').textContent = ({preflop:'PRÉFLOP',flop:'FLOP',turn:'TURN',river:'RIVER',abattage:'ABATTAGE'})[PK.tour]||'';
   $('#pk-commune').innerHTML = PK.commune.map(c=>carteHTML(c)).join('')
@@ -259,7 +264,7 @@ function peindrePK(resume, delta){
     : '';
   $('#pk-solde').textContent = fmt(G.prof.cashPk)+' €';
   $('#pk-mains').textContent = fmt(G.prof.mainsPk||0);
-  $('#ruine-pk').classList.toggle('on', G.prof.cashPk===PK_DEPART && (G.prof.ruinesPk||0)>0 && PK.fini);
+  $('#ruine-pk').classList.toggle('on', !!ruine);
 }
 
 /* ---------- amorçage ---------- */
