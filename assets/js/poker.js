@@ -72,7 +72,7 @@ function nouvelleMain(){
   PK.commune = []; PK.pot = 0; PK.tour='preflop'; PK.fini=false;
   PK.bouton = (PK.bouton+1) % 4;
   PK.joueurs.forEach(j=>{ j.main=[PK.sabot.pop(), PK.sabot.pop()];
-    j.engage=0; j.couche=false; j.allin=false; j.mise=0; });
+    j.engage=0; j.total=0; j.couche=false; j.allin=false; });
 
   const pb = (PK.bouton+1)%4, gb = (PK.bouton+2)%4;
   engager(pb, Math.floor(PK.blinde/2));
@@ -87,8 +87,8 @@ function nouvelleMain(){
 
 function engager(i, m){
   const j = PK.joueurs[i];
-  const v = Math.min(m, j.tapis);
-  j.tapis -= v; j.engage += v; PK.pot += v;
+  const v = Math.max(0, Math.min(m, j.tapis));
+  j.tapis -= v; j.engage += v; j.total = (j.total||0) + v; PK.pot += v;
   if(j.tapis===0) j.allin = true;
 }
 
@@ -155,25 +155,37 @@ function finirMain(){
   while(PK.commune.length<5 && enJeu().length>1) PK.commune.push(PK.sabot.pop());
 
   const avant = PK.joueurs[0].tapis;
-  const mises = PK.joueurs.map(j=>({j, total:j.total||0}));
-  // on recalcule les engagements totaux de la main
-  const engages = PK.joueurs.map(j=>j.totalEngage||0);
+  const lignes = [];
 
-  const restants = enJeu();
-  let lignes = [];
-  if(restants.length===1){
-    restants[0].tapis += PK.pot;
-    lignes.push(restants[0].nom + ' remporte ' + PK.pot + ' € (tout le monde s\'est couché)');
-  }else{
-    const forces = new Map();
-    restants.forEach(j=>forces.set(j, meilleure7([...j.main, ...PK.commune])));
-    let best=null; restants.forEach(j=>{ const f=forces.get(j); if(!best||compare(f,best)>0) best=f; });
-    const gagnants = restants.filter(j=>compare(forces.get(j),best)===0);
-    const part = Math.floor(PK.pot/gagnants.length);
-    gagnants.forEach(j=> j.tapis += part);
-    lignes.push(gagnants.map(j=>j.nom).join(' et ') + ' : ' + NOM_MAIN[best[0]]
-      + ' — ' + PK.pot + ' €');
-  }
+  const forces = new Map();
+  if(PK.commune.length===5) enJeu().forEach(j=>forces.set(j, meilleure7([...j.main, ...PK.commune])));
+
+  // un pot par palier d'engagement : personne ne peut gagner plus qu'il n'a misé
+  const paliers = [...new Set(PK.joueurs.map(j=>j.total||0).filter(t=>t>0))].sort((a,b)=>a-b);
+  let precedent = 0, reparti = 0;
+  paliers.forEach(niv=>{
+    const contributeurs = PK.joueurs.filter(j=>(j.total||0) >= niv);
+    const montant = (niv - precedent) * contributeurs.length;
+    precedent = niv;
+    if(montant <= 0) return;
+    const eligibles = contributeurs.filter(j=>!j.couche);
+    if(!eligibles.length){
+      const part = Math.floor(montant/contributeurs.length);
+      contributeurs.forEach(j=> j.tapis += part);
+      reparti += part*contributeurs.length; return;
+    }
+    let best=null;
+    eligibles.forEach(j=>{ const f=forces.get(j); if(f && (!best||compare(f,best)>0)) best=f; });
+    const gagnants = best ? eligibles.filter(j=>compare(forces.get(j),best)===0) : eligibles;
+    const part = Math.floor(montant/gagnants.length);
+    const reste = montant - part*gagnants.length;
+    gagnants.forEach((j,k)=> j.tapis += part + (k===0 ? reste : 0));
+    reparti += montant;
+    lignes.push(gagnants.map(j=>j.nom).join(' et ')
+      + (best ? ' : ' + NOM_MAIN[best[0]] : ' remporte')
+      + ' — ' + montant + ' €');
+  });
+  PK.pot = Math.max(0, PK.pot - reparti);
 
   const delta = PK.joueurs[0].tapis - avant;
   G.prof.mainsPk = (G.prof.mainsPk||0)+1;

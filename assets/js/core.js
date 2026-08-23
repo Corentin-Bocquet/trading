@@ -69,7 +69,9 @@ const RL_MISES = {
   c1:{p:2,nom:'COLONNE 1'}, c2:{p:2,nom:'COLONNE 2'}, c3:{p:2,nom:'COLONNE 3'}
 };
 function gainMise(cle, n){
-  if(cle[0]==='n') return (+cle.slice(1)===n) ? 35 : 0;
+  // attention : « noir » commence aussi par n, d'où la vérification stricte
+  const plein = /^n(\d{1,2})$/.exec(cle);
+  if(plein) return (+plein[1] === n) ? 35 : 0;
   if(n===0) return 0;
   switch(cle){
     case 'rouge':  return couleurDe(n)==='rouge' ? 1 : 0;
@@ -87,7 +89,7 @@ function gainMise(cle, n){
   }
   return 0;
 }
-const nomMise = c => c[0]==='n' ? ('N° '+c.slice(1)) : (RL_MISES[c]||{nom:c}).nom;
+const nomMise = c => /^n\d{1,2}$/.test(c) ? ('N° '+c.slice(1)) : (RL_MISES[c]||{nom:c}).nom;
 
 /* ---------- règles du jeu ---------- */
 const CAPITAL_DEPART = 10000;   // tout le monde démarre avec 10 000 $

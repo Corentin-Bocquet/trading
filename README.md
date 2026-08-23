@@ -21,6 +21,12 @@ Les montants sont choisis pour que chaque jeu tienne une trentaine de coups à l
 minimale : 5 € au blackjack, 1 € à la roulette, blindes de 5 et 10 au poker.
 Caisse à zéro : recapitalisation et compteur de ruines propre au jeu.
 
+### Roulette : vérification des gains
+
+La table de gains est vérifiée automatiquement sur **les 37 numéros croisés avec les
+49 mises possibles**, et le rendement simulé sur 20 000 tours converge vers −2,7 %
+pour chaque type de mise, ce qui est la valeur théorique de la roulette européenne.
+
 ### Blackjack
 
 Sabot de 6 jeux mélangé au générateur cryptographique, remélangé au quart restant.
@@ -34,6 +40,10 @@ Texas Hold'em à quatre, blindes 5 et 10. Évaluateur de main sur les 21 combina
 de 5 parmi 7, vérifié sur les dix catégories y compris la quinte à l'as bas.
 Les adversaires décident sur la force réelle de leur main et la cote du pot,
 avec une part d'imprévisible.
+
+**Pots secondaires gérés** : un pot par palier d'engagement, personne ne peut
+remporter plus qu'il n'a misé. La conservation des jetons est vérifiée sur
+20 mains avec relances et tapis : aucun jeton créé ni perdu, aucun pot résiduel.
 
 ### Roulette
 
