@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<link rel="icon" href="assets/icons/favicon.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/salon.css">
+<title>Trading &middot; En ligne</title>
+</head>
+<body>
+<div id="app">
+
+<!-- ============ LE HALL ============ -->
+<section class="page ol" id="vue-hall">
+
+  <div class="topbar">
+    <div class="soldebox"><u>EN LIGNE</u><b id="lien" class="lien ferme">CONNEXION…</b></div>
+    <a class="marchebtn" href="index.html">ACCUEIL</a>
+    <a class="wordbtn sm" href="profil.html">MENU</a>
+  </div>
+
+  <h2 class="premier">JOUER À PLUSIEURS</h2>
+  <p class="expl">Crée une table, envoie le code à quatre lettres à tes amis, et jouez
+  tous sur la même roue, le même sabot, la même donne. Chacun mise sur sa propre caisse,
+  celle de son jeu solo : ce que tu gagnes ici, tu le gardes là-bas.</p>
+
+  <h2>Le jeu de la table</h2>
+  <div class="mgrid" id="choix-jeu">
+    <button class="mbtn on" data-jeu="roulette">ROULETTE</button>
+    <button class="mbtn" data-jeu="blackjack">BLACKJACK</button>
+    <button class="mbtn" data-jeu="poker">POKER</button>
+  </div>
+  <input type="hidden" id="creer-jeu" value="roulette">
+
+  <button class="btn play" id="b-creer">CRÉER UNE TABLE</button>
+
+  <h2>Rejoindre avec un code</h2>
+  <div class="joinrow">
+    <input id="code-saisi" maxlength="4" autocapitalize="characters" autocomplete="off"
+           spellcheck="false" placeholder="ABCD">
+    <button class="btn ghost" id="b-rejoindre">REJOINDRE</button>
+  </div>
+  <div class="err" id="hall-err"></div>
+
+  <h2>Tables ouvertes</h2>
+  <div class="lb" id="hall-tables"></div>
+
+  <h2>Qui est en ligne</h2>
+  <div class="lb" id="hall-joueurs"></div>
+
+  <p class="expl"><b>Rien n'est truqué.</b> Le numéro de la roulette et l'ordre des cartes
+  sont tirés par le générateur cryptographique du navigateur qui tient la table. Au poker,
+  tes deux cartes te sont envoyées chiffrées avec ta clé : personne d'autre que toi ne peut
+  les lire pendant la main.</p>
+
+  <div class="grow"></div>
+</section>
+
+<!-- ============ LA TABLE ============ -->
+<section class="page ol" id="vue-table" style="display:none">
+
+  <div class="topbar">
+    <div class="soldebox"><u>TABLE</u><b id="t-code">····</b></div>
+    <span class="marchebtn" id="t-jeu">ROULETTE</span>
+    <button class="wordbtn sm" id="b-pret">PRÊT</button>
+    <button class="wordbtn sm" id="b-quitter">QUITTER</button>
+  </div>
+
+  <div class="subbar"><span id="t-hote"></span></div>
+  <div class="tmsg" id="t-msg"></div>
+
+  <div class="lb compact" id="t-joueurs"></div>
+
+  <div id="zone-jeu">
+
+    <!-- ---------- ROULETTE ---------- -->
+    <div class="zjeu" data-jeu="roulette" style="display:none">
+      <div class="etatjeu" id="ol-etat">PLACEZ VOS MISES</div>
+      <div class="roulettewrap">
+        <canvas id="roue"></canvas>
+        <div class="resultat" id="ol-res"></div>
+      </div>
+      <div class="subbar">
+        <span>TA CAISSE <b id="ol-solde">50 €</b></span>
+        <span>TA MISE <b id="ol-mise" style="color:var(--gold2)">0 €</b></span>
+      </div>
+      <div class="hist" id="ol-mises"></div>
+      <div class="jetons" id="ol-jetons">
+        <u>JETON</u>
+        <b data-v="1" class="on">1 €</b><b data-v="2">2 €</b><b data-v="5">5 €</b>
+        <b data-v="10">10 €</b><b data-v="25">25 €</b>
+      </div>
+      <div id="ol-tapis"></div>
+      <div class="rlactions">
+        <button class="btn" id="ol-lancer">LANCER LA BILLE</button>
+        <button class="btn ghost" id="ol-vider">TOUT RETIRER</button>
+      </div>
+      <p class="expl">L'hôte lance la bille pour toute la table. Tout le monde voit la
+      même trajectoire et le même numéro, mais chacun encaisse ou perd ses propres mises.</p>
+    </div>
+
+    <!-- ---------- BLACKJACK ---------- -->
+    <div class="zjeu" data-jeu="blackjack" style="display:none">
+      <div class="etatjeu" id="ol-bj-etat">MISES</div>
+      <div class="feutre">
+        <div class="ligne">
+          <u>CROUPIER <b id="ol-bj-pc"></b></u>
+          <div class="cartes" id="ol-bj-croupier"></div>
+        </div>
+        <div class="ligne">
+          <u>LA TABLE</u>
+          <div id="ol-bj-mains"></div>
+        </div>
+      </div>
+      <div class="subbar"><span>TA CAISSE <b id="ol-bj-solde">200 €</b></span></div>
+      <div id="ol-bj-tapis">
+        <div class="jetons" id="ol-bj-jetons">
+          <u>MISE</u>
+          <b data-v="5" class="on">5 €</b><b data-v="10">10 €</b><b data-v="25">25 €</b>
+          <b data-v="50">50 €</b><b data-v="100">100 €</b>
+        </div>
+        <button class="btn play" id="ol-bj-miser">MISER <span id="ol-bj-mise">5 €</span></button>
+      </div>
+      <div class="row" id="ol-bj-actions" style="display:none">
+        <button class="btn" id="ol-bj-tirer">TIRER</button>
+        <button class="btn ghost" id="ol-bj-rester">RESTER</button>
+        <button class="btn ghost" id="ol-bj-doubler">DOUBLER</button>
+      </div>
+      <p class="expl">La donne part quand tout le monde a misé. Chacun joue sa main à son
+      tour, puis le croupier tire à 16 et reste à 17. Le blackjack paie 3 contre 2.</p>
+    </div>
+
+    <!-- ---------- POKER ---------- -->
+    <div class="zjeu" data-jeu="poker" style="display:none">
+      <div class="etatjeu" id="ol-pk-etat">EN ATTENTE DES JOUEURS</div>
+      <div class="feutre pk">
+        <div class="ligne">
+          <u>POT <b id="ol-pk-pot">0 €</b> <s id="ol-pk-tour" style="opacity:.6"></s></u>
+          <div class="cartes" id="ol-pk-commune"></div>
+        </div>
+        <div class="pkbots" id="ol-pk-joueurs"></div>
+      </div>
+      <div class="subbar"><span>TA MAIN <b id="ol-pk-force"></b></span></div>
+      <button class="btn play" id="ol-pk-asseoir">S'ASSEOIR AVEC <span id="ol-pk-cave">500 €</span></button>
+      <button class="btn" id="ol-pk-demarrer" style="display:none">DISTRIBUER</button>
+      <div id="ol-pk-actions" style="display:none">
+        <div class="row">
+          <button class="btn ghost" id="ol-pk-coucher">SE COUCHER</button>
+          <button class="btn" id="ol-pk-suivre">SUIVRE</button>
+        </div>
+        <div class="relanceur">
+          <button class="wordbtn sm" id="ol-pk-moins">MOINS</button>
+          <b id="ol-pk-relance">0 €</b>
+          <button class="wordbtn sm" id="ol-pk-plus">PLUS</button>
+        </div>
+        <div class="row">
+          <button class="btn ghost" id="ol-pk-relancer">RELANCER</button>
+          <button class="btn ghost" id="ol-pk-tapis">TAPIS</button>
+        </div>
+      </div>
+      <div class="resdetail" id="ol-pk-resume"></div>
+      <p class="expl">Tu amènes en cave ce que tu veux jusqu'à 500 €. Tes deux cartes
+      t'arrivent chiffrées, l'hôte les distribue mais l'application ne les affiche que chez
+      toi. Quand tu quittes la table, ton tapis retourne dans ta caisse de poker.</p>
+    </div>
+
+  </div>
+
+  <h2>Discussion</h2>
+  <div class="chat" id="chat"></div>
+  <input id="chat-saisi" maxlength="120" placeholder="Écris quelque chose puis Entrée">
+
+  <div class="grow"></div>
+</section>
+
+</div>
+<script src="assets/js/core.js"></script>
+<script src="assets/js/audio.js"></script>
+<script src="assets/js/cloud.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/regles.js"></script>
+<script src="assets/js/roue.js"></script>
+<script src="assets/js/temps-reel.js"></script>
+<script src="assets/js/salon-jeux.js"></script>
+<script src="assets/js/salon-ui.js"></script>
+<script src="assets/js/salon.js"></script>
+</body></html>

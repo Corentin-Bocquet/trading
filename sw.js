@@ -3,16 +3,19 @@
    installée sur l'écran d'accueil. Incrémente CACHE à chaque
    modification de fichier pour forcer la mise à jour.
    ============================================================ */
-const CACHE = 'trading-v10';
+const CACHE = 'trading-v11';
 const SHELL = [
   'index.html','login.html','signup.html','app.html','profil.html','roulette.html',
-  'blackjack.html','poker.html',
+  'blackjack.html','poker.html','salon.html',
   'manifest.webmanifest',
-  'assets/css/style.css',
+  'assets/css/style.css','assets/css/salon.css',
   'assets/js/core.js','assets/js/audio.js','assets/js/score.js','assets/data/catalogue.js',
   'assets/js/cloud.js','assets/js/chart.js','assets/js/game.js','assets/js/ui.js',
   'assets/js/app.js','assets/js/home.js','assets/js/auth.js','assets/js/profil.js',
-  'assets/js/notif.js','assets/js/roulette.js','assets/js/blackjack.js','assets/js/poker.js',
+  'assets/js/notif.js','assets/js/regles.js','assets/js/roue.js','assets/js/roulette.js',
+  'assets/js/blackjack.js','assets/js/poker.js',
+  'assets/js/temps-reel.js','assets/js/salon.js','assets/js/salon-jeux.js',
+  'assets/js/salon-ui.js',
   'assets/sounds/swipe.mp3','assets/sounds/coin.mp3','assets/sounds/zoom.mp3',
   'assets/sounds/whoosh.mp3','assets/sounds/win.mp3','assets/sounds/fail.mp3',
   'assets/sounds/levelup.mp3','assets/sounds/sell.mp3','assets/sounds/click.mp3',

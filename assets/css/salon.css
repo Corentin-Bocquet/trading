@@ -1,0 +1,41 @@
+/* ============================================================
+   LES TABLES EN LIGNE
+   Chargé uniquement par salon.html, en complément de style.css.
+   ============================================================ */
+.page.ol h2.premier{margin-top:6px}
+.lien{font-size:12px;letter-spacing:.06em}
+.lien.ouvert{color:var(--green)}
+.lien.connexion{color:var(--gold2)}
+.lien.ferme{color:var(--red)}
+
+.joinrow{display:flex;gap:10px;align-items:stretch}
+.joinrow input{flex:1;min-width:0;text-align:center;font-size:26px;font-weight:800;
+  letter-spacing:.28em;text-transform:uppercase;background:#14161a;color:#fff;
+  border:1px solid #2a2e36;border-radius:14px;padding:12px 8px}
+.joinrow .btn{width:auto;padding:0 18px;white-space:nowrap}
+
+.lb.compact .lbline{padding:8px 10px}
+.pretok{color:var(--green);font-size:11px;font-weight:800;margin-left:6px}
+.tablerow{cursor:pointer}
+.tablerow:active{transform:scale(.985)}
+
+.etatjeu{text-align:center;font-size:13px;font-weight:800;letter-spacing:.14em;
+  color:var(--gold2);margin:10px 0 4px}
+.zjeu{display:flex;flex-direction:column;gap:12px}
+.zjeu > *{flex-shrink:0}
+
+.relanceur{display:flex;align-items:center;justify-content:center;gap:14px;margin:8px 0}
+.relanceur b{font-size:22px;font-weight:800;min-width:96px;text-align:center;color:var(--gold2)}
+
+.chat{background:#101216;border:1px solid #23262d;border-radius:14px;padding:10px;
+  min-height:70px;max-height:190px;overflow-y:auto;font-size:14px}
+.chatline{padding:2px 0;line-height:1.35}
+.chatline b{color:var(--gold2);margin-right:6px}
+#chat-saisi{width:100%;margin-top:8px;background:#14161a;color:#fff;border:1px solid #2a2e36;
+  border-radius:12px;padding:11px 13px;font-size:15px}
+#ol-bj-mains .bjmain, #ol-pk-joueurs .pkbot{margin-top:8px}
+#ol-pk-resume{text-align:center;margin-top:6px}
+.zjeu .pos{color:#5fe8b6}.zjeu .neg{color:#ff9098}
+.tmsg{text-align:center;font-size:13px;color:var(--gold2);min-height:18px;
+  opacity:0;transition:opacity .18s}
+.tmsg.on{opacity:1}

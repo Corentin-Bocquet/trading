@@ -63,6 +63,59 @@ C'est le contraire exact du trading, où les cycles ont une forme.
 
 Caisse à zéro : recapitalisation à 50 € et compteur de ruines incrémenté.
 
+## Jouer à plusieurs en ligne
+
+Page `salon.html`, accessible depuis l'accueil. Roulette, blackjack et poker se
+jouent à plusieurs en temps réel, sur le même tirage et le même sabot.
+
+### Comment ça tient debout sans serveur de jeu
+
+Le transport est **Supabase Realtime** (canaux Phoenix sur WebSocket), attaqué
+directement en WebSocket dans `assets/js/temps-reel.js` : pas de bibliothèque,
+un battement de cœur toutes les 25 s, reconnexion à intervalle doublant et
+ré-inscription automatique aux canaux.
+
+Deux canaux :
+
+| Canal | Rôle |
+|---|---|
+| `realtime:hall` | qui est en ligne, quelles tables sont ouvertes |
+| `realtime:salon:<CODE>` | une table, son état, ses actions, son chat |
+
+**Le joueur dont l'identifiant est le plus petit tient la table.** Tout le monde
+trie la même liste de présences et arrive donc au même hôte, sans élection ni
+négociation. L'hôte tire les numéros et les cartes, applique les actions reçues
+et rediffuse l'**état complet** ; les autres n'envoient que des actions. Une
+désynchronisation ne survit pas au message suivant. Si l'hôte s'en va, le
+successeur est immédiat et relance la table si elle était figée en plein tour.
+
+### Les caisses
+
+Chacun mise sur **sa propre caisse**, celle de son jeu solo. La mise est débitée
+chez le joueur au moment du geste et le gain recrédité au règlement : ce qu'on
+gagne en ligne, on le garde hors ligne. Au poker, on amène une cave (jusqu'à
+500 €) ; en quittant la table, le tapis retourne dans la caisse.
+
+### Les cartes privées du poker
+
+Chaque client génère une paire **RSA-OAEP 2048** au chargement et publie sa clé
+publique dans sa présence. L'hôte chiffre les deux cartes de chaque joueur avec
+la clé de ce joueur : les autres ne reçoivent qu'un bloc illisible. L'hôte, lui,
+connaît la donne — c'est la limite inévitable d'un jeu sans serveur dédié, et
+c'est dit clairement dans l'app.
+
+### Ce qui est vérifié
+
+Deux puis trois navigateurs rejoignent la même table : même numéro de roulette
+partout, règlement correct de chaque caisse, cartes des autres illisibles, et
+aucun jeton créé ni perdu sur quatre mains de poker avec relances et tapis.
+Le départ de l'hôte en pleine main est testé aussi : le successeur est élu et
+la table repart.
+
+Les pots annexes du poker en ligne suivent la même logique que le solo :
+répartition par paliers de mise, reste au premier gagnant. Le blackjack en ligne
+rejoue les mêmes règles que le solo (croupier à 17, blackjack payé 3 contre 2).
+
 ## Prolonger une partie de trading
 
 À la fin des manches prévues, si des bougies réelles existent après la dernière,
@@ -187,19 +240,33 @@ index.html                 accueil (reprise de partie, choix du mode)
 login.html                 connexion
 signup.html                création de compte
 app.html                   le jeu (graphique, swipe, bilan de cycle)
+roulette.html              roulette solo
+blackjack.html             blackjack solo
+poker.html                 poker solo
+salon.html                 jouer à plusieurs (hall + table)
 profil.html                classement, courbe de calibration, historique
 manifest.webmanifest       métadonnées PWA (nom « Trading », icônes)
 sw.js                      service worker : jeu disponible hors connexion
 assets/css/style.css       design system complet
+assets/css/salon.css       styles propres aux tables en ligne
 assets/js/core.js          outils, état global, persistance locale
 assets/js/audio.js         effets sonores
-assets/data/catalogue.js   catalogue des 38 actifs + 158 cycles
+assets/data/catalogue.js   catalogue des 38 actifs + 391 cycles
 assets/data/S_*.js         une série de prix par actif, chargée à la demande
 assets/js/score.js         notation par zone de cycle
 assets/js/chart.js         moteur de rendu des bougies japonaises
 assets/js/game.js          logique de jeu, swipe, reveal, bilan
 assets/js/ui.js            barre de missions, classement, level up, calibration
 assets/js/cloud.js         Supabase (auth + sauvegarde)
+assets/js/regles.js        règles pures des cartes, partagées solo et en ligne
+assets/js/roue.js          rendu et animation de la roue, partagés
+assets/js/roulette.js      roulette solo
+assets/js/blackjack.js     blackjack solo
+assets/js/poker.js         poker solo contre trois adversaires
+assets/js/temps-reel.js    client Supabase Realtime (Phoenix sur WebSocket)
+assets/js/salon.js         hall, tables, élection de l'hôte, clés RSA, chat
+assets/js/salon-jeux.js    les trois moteurs de jeu en ligne
+assets/js/salon-ui.js      affichage et boutons des tables en ligne
 assets/js/app.js           amorçage de la page de jeu
 assets/js/home.js          amorçage de l'accueil
 assets/js/auth.js          amorçage des pages connexion / inscription
@@ -242,7 +309,8 @@ achat, entre le creux et le sommet suivant pour une prise de profits.
 Projet Supabase, tables `cyc_profiles` et `cyc_sessions`, sécurité au niveau
 des lignes activée. L'URL et la clé publique sont dans `assets/js/cloud.js`.
 La clé `anon` est publique par conception : les politiques RLS empêchent un
-joueur de lire ou modifier les données d'un autre.
+joueur de lire ou modifier les données d'un autre. Le même projet sert les
+canaux Realtime des tables en ligne.
 
 ## Avertissement
 

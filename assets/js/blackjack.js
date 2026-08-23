@@ -13,18 +13,7 @@ const BJ = {
   gainTour: 0
 };
 
-/* ---------- valeur d'une main : l'as vaut 11 tant que ça ne dépasse pas ---------- */
-function pointsBJ(cartes){
-  let t=0, as=0;
-  for(const c of cartes){
-    if(c.v==='A'){ as++; t+=11; }
-    else if(['J','Q','K','10'].includes(c.v)) t+=10;
-    else t+=+c.v;
-  }
-  while(t>21 && as>0){ t-=10; as--; }
-  return {total:t, souple: as>0};
-}
-const estBJ = m => m.length===2 && pointsBJ(m).total===21;
+/* pointsBJ et estBJ vivent dans regles.js */
 
 function piocher(){
   if(BJ.sabot.length <= BJ.coupe){ BJ.sabot = nouveauSabot(6); BJ.coupe = Math.floor(6*52*0.25);
