@@ -14,6 +14,10 @@
     $('#b-sound').textContent = on?'SON':'MUET'; $('#b-sound').classList.toggle('off',!on); };
   if(!Audio_.isOn()){ $('#b-sound').textContent='MUET'; $('#b-sound').classList.add('off'); }
   $('#b-menu').onclick  = ()=>{ Audio_.play('click'); go('profil.html'); };
+  // le badge « ? » explique pourquoi l'actif est masqué
+  $('#chipanon').onclick = ()=>{ Audio_.play('click');
+    const b=$('#anonbulle'); b.classList.toggle('on');
+    clearTimeout(window._ab); window._ab=setTimeout(()=>b.classList.remove('on'),6000); };
 
   const cw = $('#chartwrap');
   cw.addEventListener('wheel', e=>{ e.preventDefault(); if(!G.sc) return;

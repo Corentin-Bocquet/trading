@@ -56,7 +56,9 @@
 
   <div class="chartwrap" id="chartwrap">
     <canvas id="chart"></canvas>
-    <div class="chip anon" id="chipanon">ACTIF <span class="q">? ? ?</span> &middot; P&Eacute;RIODE MASQU&Eacute;E</div>
+    <button class="chip anon" id="chipanon">ACTIF <span class="q">? ? ?</span> &middot; P&Eacute;RIODE MASQU&Eacute;E</button>
+    <div class="anonbulle" id="anonbulle">L'actif et les dates sont cachés jusqu'à la fin du cycle.
+      C'est fait exprès : sans le nom, tu lis la forme du marché au lieu de te souvenir de l'histoire.</div>
     <div class="zoomctl">
       <button class="zbtn" id="b-zout" aria-label="D&eacute;zoomer">&minus;</button>
       <button class="zbtn" id="b-zin" aria-label="Zoomer">+</button>
@@ -73,6 +75,7 @@
     <div class="card" id="card">
       <div class="tint" id="tint"></div>
       <div class="arrow l"></div><div class="arrow r"></div>
+      <div class="uphint" id="uphint">&#9650; ENCAISSER</div>
       <div class="face" id="face">
         <div class="big" id="f-big"></div>
         <div class="sub" id="f-sub"></div>

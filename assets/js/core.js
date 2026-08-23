@@ -55,7 +55,10 @@ const CAPITAL_DEPART = 10000;   // tout le monde démarre avec 10 000 $
 const SEUIL_RUINE    = 500;     // en dessous, le portefeuille est considéré perdu
 const PALIER_SAGE    = 0.35;    // premier repère montré pendant le geste
 const PALIER_GROS    = 0.66;    // second repère
-const MISSIONS_PAR_NIVEAU = 7;
+/* les niveaux coûtent de plus en plus cher, et un palier sur cinq est un mur */
+const COUT_BASE = 4, COUT_PENTE = 3;
+function coutNiveau(n){ const c = COUT_BASE + COUT_PENTE*n; return n%5===0 ? c*2 : c; }
+function seuilNiveau(n){ let s=0; for(let i=1;i<n;i++) s+=coutNiveau(i); return s; }
 const MIN_DECISIONS  = 20;      // avant ça, le pourcentage de bonnes décisions ne veut rien dire
 
 /* ---------- état global ---------- */
@@ -74,8 +77,9 @@ const G = {
   anim:null, revealing:false, base:100, revealPrices:false, showMA:false
 };
 
-function missionDone(){ return G.prof.missions % MISSIONS_PAR_NIVEAU; }
-function niveauDe(m){ return Math.floor(m/MISSIONS_PAR_NIVEAU)+1; }
+function niveauDe(m){ let n=1; while(n<60 && m >= seuilNiveau(n+1)) n++; return n; }
+function missionDone(){ return G.prof.missions - seuilNiveau(G.prof.level); }
+function missionsNiveau(){ return coutNiveau(G.prof.level); }
 
 /* bonnes décisions : la qualité, indépendante du temps de jeu */
 function precisionDe(p){

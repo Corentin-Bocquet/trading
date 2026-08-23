@@ -75,8 +75,9 @@ function updateHUD(){
   $('#t-pru').textContent  = G.units>0 ? fmt2(G.cost/G.units/G.base*100) : '—';
   $('#t-lvl').textContent  = G.prof.level;
   $('#t-xp').textContent   = fmt(G.prof.xp)+' XP';
-  $('#t-xpbar').style.width = (missionDone()/MISSIONS_PAR_NIVEAU*100)+'%';
+  $('#t-xpbar').style.width = clamp(missionDone()/missionsNiveau()*100,0,100)+'%';
   $('#hint-up').style.opacity = G.units>0 ? 1 : .25;
+  $('#uphint').classList.toggle('on', G.units>0);
 
   // bandeau du mode simple : argent restant, argent placé, paliers posés
   const nb = G.actions.filter(a=>a.type==='buy').length;
@@ -150,9 +151,9 @@ function refusDezoom(){
    ============================================================ */
 (function swipe(){
   const card=$('#card'), tint=$('#tint'), gauge=$('#gauge'), fill=$('#gaugefill'),
-        fbig=$('#f-big'), fsub=$('#f-sub');
+        face=$('#face'), fbig=$('#f-big'), fsub=$('#f-sub');
   let x0=0,y0=0,drag=false,mode=null,val=0;
-  const TH=42, COMMIT=104, RANGE=180;
+  const TH=40, COMMIT=78, RANGE=170, COMMIT_V=62, RANGE_V=130;
 
   // nom de la tranche engagée : un mot, compris tout de suite
   function tranche(v){
@@ -167,18 +168,21 @@ function refusDezoom(){
     const al=card.querySelector('.arrow.l'), ar=card.querySelector('.arrow.r');
     if(G.sc && !G.gateOK){
       al.textContent=''; ar.textContent='';
+      face.className = 'face';
       fbig.innerHTML = '<span class="lockface">DÉZOOME D’ABORD</span>';
       fsub.textContent = 'prends du recul sur le cycle avant de décider';
       return;
     }
     al.innerHTML = '<u class="w-wait">ATTENDRE</u>';
     ar.innerHTML = '<u class="w-buy">ACHETER</u>';
+    face.className = 'face bas';
     fbig.innerHTML = '<span class="swipehint">glisse ton doigt</span>';
-    fsub.textContent = G.units>0 ? 'vers le haut pour ENCAISSER' : 'gauche ou droite';
+    fsub.textContent = '';
   }
   window.resetCardFace = neutre;
 
   function render(dx,dy){
+    face.className = 'face';
     const canSell = G.units>0;
     let m=null;
     if(dy < -TH && Math.abs(dy) > Math.abs(dx) && canSell) m='sell';
@@ -193,9 +197,17 @@ function refusDezoom(){
     al.textContent=''; ar.textContent='';
 
     if(m==='buy'){
-      const t = clamp((dx-TH)/RANGE,0,1);
-      val = clamp(0.05 + t*0.95, .05, 1);
+      const engage = dx >= COMMIT;
+      const t = clamp((dx-COMMIT)/RANGE,0,1);
+      val = engage ? clamp(0.01 + t*0.99, .01, 1) : 0;
       const eur = G.cash*val, tr = tranche(val);
+      if(!engage){
+        tint.style.background='linear-gradient(90deg,rgba(22,199,132,0),rgba(22,199,132,.18))';
+        tint.style.opacity=1; gauge.style.opacity=0;
+        fbig.innerHTML='<span class="w-buy act">ACHETER</span><span class="pousse">continue de glisser →</span>';
+        fsub.textContent='le montant se règle en continuant';
+        return;
+      }
       tint.style.background='linear-gradient(90deg,rgba(22,199,132,0),rgba(22,199,132,.30))';
       tint.style.opacity=1; gauge.style.opacity=1;
       fill.style.width=(val*100)+'%';
@@ -205,9 +217,17 @@ function refusDezoom(){
         + '<span class="tranche '+tr.cls+'">'+tr.mot+'</span>';
       fsub.textContent = dollars(eur)+' sur '+dollars(G.cash)+' disponibles';
     }else if(m==='sell'){
-      const t = clamp((-dy-TH)/130,0,1);
-      val = clamp(0.05 + t*0.95, .05, 1);
+      const engage = -dy >= COMMIT_V;
+      const t = clamp((-dy-COMMIT_V)/RANGE_V,0,1);
+      val = engage ? clamp(0.01 + t*0.99, .01, 1) : 0;
       const tr = tranche(val);
+      if(!engage){
+        tint.style.background='linear-gradient(0deg,rgba(59,130,246,0),rgba(59,130,246,.18))';
+        tint.style.opacity=1; gauge.style.opacity=0;
+        fbig.innerHTML='<span class="w-sell act">ENCAISSER</span><span class="pousse">continue vers le haut ↑</span>';
+        fsub.textContent='le montant se règle en continuant';
+        return;
+      }
       tint.style.background='linear-gradient(0deg,rgba(59,130,246,0),rgba(59,130,246,.30))';
       tint.style.opacity=1; gauge.style.opacity=1;
       fill.style.width=(val*100)+'%';
@@ -234,8 +254,9 @@ function refusDezoom(){
   function up(e){
     if(!drag) return; drag=false;
     const dx=e.clientX-x0, dy=e.clientY-y0;
-    const far = (mode==='sell') ? (-dy>COMMIT) : (Math.abs(dx)>COMMIT);
-    if(mode && far){ const m=mode, v=val; reset(); doAction(m,v); }
+    const far = mode==='sell' ? (-dy>=COMMIT_V)
+              : mode==='wait' ? (-dx>=COMMIT) : (dx>=COMMIT);
+    if(mode && far && (mode==='wait' || val>0)){ const m=mode, v=val; reset(); doAction(m,v); }
     else reset();
   }
   function reset(){

@@ -26,11 +26,25 @@ Le marché se choisit sur l'accueil, en un mot :
 | SECTEURS | tech, énergie, santé, banque, conso, défense |
 | ENTREPRISE | une entreprise précise, choisie par recherche |
 
-**158 cycles** au total. L'actif et la période restent cachés jusqu'à la fin du cycle,
+**357 cycles** au total, répartis en trois formes pour éviter que tout finisse toujours en hausse :
+
+- **cycle complet** — du sommet au sommet suivant (158)
+- **descente seule** — la partie s'arrête au creux, aucune reprise (65)
+- **après l'euphorie** — on entre en pleine hausse et on finit dans la rechute (134)
+
+Mesuré sur les 357 : **53 % finissent plus haut que la première décision, 47 % plus bas**,
+médiane +5 %. Le léger biais haussier restant est celui du marché lui-même, pas du jeu. L'actif et la période restent cachés jusqu'à la fin du cycle,
 même quand on choisit l'entreprise soi-même.
 
 Les séries de prix sont chargées à la demande : le catalogue pèse 32 Ko, chaque
 actif environ 50 Ko, et seul l'actif joué est téléchargé.
+
+## Les niveaux
+
+Le coût d'un niveau augmente à chaque palier : 7 bonnes décisions pour passer au
+niveau 2, 10 pour le 3, 13 pour le 4, 16 pour le 5. **Un niveau sur cinq est doublé** :
+38 pour atteindre le niveau 6, 68 pour le niveau 11. Atteindre le niveau 6 demande
+84 bonnes décisions au total, soit une quinzaine de cycles bien joués.
 
 ## Le portefeuille
 

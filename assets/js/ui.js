@@ -10,21 +10,22 @@ function expl(txt){ return `<p class="expl">${txt}</p>`; }
 
 /* --- barre de progression "missions" --- */
 function missionBar(){
-  const done = missionDone(), reste = MISSIONS_PAR_NIVEAU-done;
-  const p = done/MISSIONS_PAR_NIVEAU;
+  const total = missionsNiveau();
+  const done = clamp(missionDone(), 0, total), reste = total-done;
+  const p = done/total;
   let dots='';
-  for(let k=0;k<reste;k++) dots += '<s class="'+(k===0?'hot':'')+'"></s>';
+  for(let k=0;k<Math.min(reste,9);k++) dots += '<s class="'+(k===0?'hot':'')+'"></s>';
   return `<div class="missionwrap"><div class="missioncard">
     <div class="mtop">
       <div class="mico"><b>${G.prof.level}</b><u>NIVEAU</u></div>
-      <div class="mtxt"><b>Bien joué&nbsp;!</b> Encore ${reste} mission${reste>1?'s':''} pour passer au niveau ${G.prof.level+1}.</div>
+      <div class="mtxt"><b>Niveau ${G.prof.level}.</b> Encore ${reste} bonne${reste>1?'s':''} décision${reste>1?'s':''} pour passer au niveau ${G.prof.level+1}.</div>
     </div>
     <div class="mtrack">
       <div class="mfill" style="width:${clamp(p*100,9,100)}%"></div>
       <div class="mdots" style="left:calc(${clamp(p*100,9,100)}% + 16px);right:16px;justify-content:space-around">${dots}</div>
     </div>
-    <div class="mfoot"><span>${done} mission${done>1?'s':''} accomplie${done>1?'s':''}</span>
-      <span>${reste} mission${reste>1?'s':''} restante${reste>1?'s':''}</span></div>
+    <div class="mfoot"><span>${done} sur ${total}</span>
+      <span>${(G.prof.level+1)%5===0?'palier difficile':'niveau '+(G.prof.level+1)}</span></div>
   </div></div>`;
 }
 
