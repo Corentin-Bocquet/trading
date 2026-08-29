@@ -7,36 +7,27 @@ permissions:
   contents: write
 
 jobs:
-  reassembler:
+  master1024:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Recoller l'icone 512
+      - name: Deriver le master 1024 depuis le 512
         run: |
           set -e
-          cat .icones/p512_*.txt | base64 -d > assets/icons/icon-512.png
-          cp assets/icons/icon-512.png assets/icons/icon-512-maskable.png
-          file assets/icons/icon-512.png
-          sha1sum assets/icons/icon-512.png
-
-      - name: Deriver le master 1024
-        continue-on-error: true
-        run: |
-          if command -v magick >/dev/null 2>&1; then
-            magick assets/icons/icon-512.png -resize 200% -strip assets/icons/icon-1024.png
-          elif command -v convert >/dev/null 2>&1; then
-            convert assets/icons/icon-512.png -resize 200% -strip assets/icons/icon-1024.png
-          else
-            python3 -c "from PIL import Image; im=Image.open('assets/icons/icon-512.png').convert('P'); im.resize((1024,1024), Image.LANCZOS).save('assets/icons/icon-1024.png', optimize=True)"
-          fi
+          python3 -m pip install --quiet --disable-pip-version-check pillow
+          python3 - <<'PY'
+          from PIL import Image
+          im = Image.open('assets/icons/icon-512.png').convert('RGB')
+          im.resize((1024, 1024), Image.LANCZOS).quantize(colors=10).save(
+              'assets/icons/icon-1024.png', optimize=True)
+          PY
           file assets/icons/icon-1024.png
 
       - name: Publier
         run: |
-          rm -rf .icones
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Icones 512 et 1024 reassemblees [skip ci]"
+          git add assets/icons/icon-1024.png
+          git commit -m "Master 1024 de la nouvelle icone [skip ci]"
           git push
