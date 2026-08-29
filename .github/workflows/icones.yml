@@ -1,0 +1,30 @@
+name: icones
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  reassembler:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reassembler les grandes icones
+        run: |
+          cat .icones/p512_*.txt | base64 -d > assets/icons/icon-512.png
+          cp assets/icons/icon-512.png assets/icons/icon-512-maskable.png
+          magick assets/icons/icon-512.png -resize 200% -strip assets/icons/icon-1024.png
+          rm -rf .icones
+          file assets/icons/icon-512.png assets/icons/icon-1024.png
+          sha1sum assets/icons/icon-512.png
+
+      - name: Publier
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Icones 512 et 1024 reassemblees [skip ci]"
+          git push
