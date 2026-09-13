@@ -3,7 +3,7 @@
    installée sur l'écran d'accueil. Incrémente CACHE à chaque
    modification de fichier pour forcer la mise à jour.
    ============================================================ */
-const CACHE = 'trading-v12';
+const CACHE = 'trading-v13';
 const SHELL = [
   'index.html','login.html','signup.html','app.html','profil.html','roulette.html',
   'blackjack.html','poker.html','salon.html',
@@ -19,9 +19,9 @@ const SHELL = [
   'assets/sounds/swipe.mp3','assets/sounds/coin.mp3','assets/sounds/zoom.mp3',
   'assets/sounds/whoosh.mp3','assets/sounds/win.mp3','assets/sounds/fail.mp3',
   'assets/sounds/levelup.mp3','assets/sounds/sell.mp3','assets/sounds/click.mp3',
-  'assets/icons/icon-180.png','assets/icons/icon-192.png','assets/icons/icon-512.png',
-  'assets/icons/favicon.png','assets/icons/logo.png',
-  'assets/icons/icon-512-maskable.png'
+  'assets/icons/icon-180.png?v=2','assets/icons/icon-192.png?v=2','assets/icons/icon-512.png?v=2',
+  'assets/icons/favicon.png?v=2','assets/icons/logo.png',
+  'assets/icons/icon-512-maskable.png?v=2'
 ];
 
 self.addEventListener('install', e=>{
@@ -50,8 +50,8 @@ self.addEventListener('push', e=>{
   try{ if(e.data) d = Object.assign(d, e.data.json()); }catch(err){}
   e.waitUntil(self.registration.showNotification(d.titre, {
     body: d.texte,
-    icon: 'assets/icons/icon-192.png',
-    badge: 'assets/icons/icon-192.png',
+    icon: 'assets/icons/icon-192.png?v=2',
+    badge: 'assets/icons/icon-192.png?v=2',
     tag: 'rappel-quotidien',
     data: {url:'app.html'}
   }));
