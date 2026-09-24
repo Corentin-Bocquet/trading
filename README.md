@@ -172,6 +172,22 @@ tiède, près du sommet), courbe de ta note cycle après cycle, meilleur marché
 et **ton angle mort** : le conseil le plus utile tiré de ton historique.
 Ces mesures sont enregistrées avec chaque cycle (colonne `detail`).
 
+## Liquid glass
+
+Toutes les surfaces (cartes, tuiles, boutons secondaires, barres du haut, carte
+de décision du trading, feuilles d'aide) sont en verre dépoli : fond translucide,
+flou et saturation de ce qui est derrière, reflet sur l'arête haute. Un fond
+lumineux (bleu pétrole et or) derrière l'app donne de la matière au verre.
+La **barre du bas** est une pilule de verre flottante avec **quatre icônes**
+(accueil, jouer en ligne, classement, compte), chacune avec son nom pour les
+lecteurs d'écran. Sans flou disponible, la barre garde un fond teinté lisible.
+
+## Comment jouer
+
+Chaque jeu a un bouton **?** en haut. Il ouvre trois étapes simples, et s'ouvre
+tout seul à la première visite. Les boutons disent quoi faire ensuite :
+« TOUCHE UNE CASE POUR MISER », « DISTRIBUER · 5 € », etc.
+
 ## Charte « terminal doré »
 
 Nuit, or, chiffres en JetBrains Mono, titres en Space Grotesk. Chaque jeu garde

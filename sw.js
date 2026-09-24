@@ -4,7 +4,7 @@
    le réseau d'abord : une correction publiée arrive sans rien toucher.
    Incrémente CACHE seulement pour vider les vieux fichiers.
    ============================================================ */
-const CACHE = 'trading-v15';
+const CACHE = 'trading-v16';
 const SHELL = [
   './','index.html','login.html','signup.html','app.html','profil.html','roulette.html',
   'blackjack.html','poker.html','salon.html','defi.html',

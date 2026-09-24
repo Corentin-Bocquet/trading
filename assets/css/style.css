@@ -986,3 +986,102 @@ h2:after{content:"";flex:1;height:1px;background:var(--line)}
 .angle{padding:14px;border-radius:var(--r-carte);background:rgba(245,165,36,.08);border:1px solid rgba(245,165,36,.35);
   font-size:13px;line-height:1.5}
 .angle b{color:var(--gold2)}
+
+/* ============================================================
+   LIQUID GLASS
+   Du verre dépoli partout : fond lumineux derrière, matière
+   translucide devant, un reflet sur l'arête haute.
+   ============================================================ */
+:root{
+  --verre:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035) 55%,rgba(255,255,255,.06));
+  --verre-fort:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.05) 60%,rgba(255,255,255,.09));
+  --verre-bord:rgba(255,255,255,.14);
+  --verre-ombre:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.04),0 12px 32px rgba(0,0,0,.35);
+  --flou:blur(22px) saturate(170%);
+  --panel:rgba(255,255,255,.05); --panel2:rgba(255,255,255,.065); --panel3:rgba(255,255,255,.09);
+  --line:rgba(255,255,255,.1);
+}
+/* le fond lumineux que le verre laisse deviner */
+#app{background:
+  radial-gradient(70% 45% at 100% 0%,rgba(56,140,170,.42),transparent 70%),
+  radial-gradient(60% 40% at 0% 100%,rgba(245,165,36,.16),transparent 70%),
+  radial-gradient(50% 35% at 0% 30%,rgba(40,90,120,.25),transparent 70%),
+  linear-gradient(180deg,#06121a,#070a0e 60%,#0a0b0d)}
+.jeu-bj{--ambiance:rgba(22,199,132,.2)} .jeu-pk{--ambiance:rgba(234,57,67,.18)}
+.page.jeu-bj,.page.jeu-pk{background:radial-gradient(80% 40% at 50% 0%,var(--ambiance),transparent 70%)}
+
+/* la matière, appliquée à toutes les surfaces */
+.verre,.hero,.salut,.walletbig,.ticker,.jeu,.bandeau-defi,.expl,.carte-stat,.caisse,.statgrid div,.lblist,
+.lbwrap,.reprise,.aide,.obs,.carte-defi,.a2hs,.angle,.mbtn,.btn.ghost,.wordbtn,.marchebtn,.modesw,
+.inp,.joinrow input,#chat-saisi,.chat,.pkbot,.jetons b,.fen b,.lbtabs b,.zbtn,.chip,.lbmore,.wallet,.ruinebox,.bjmain{
+  background:var(--verre);border:1px solid var(--verre-bord);box-shadow:var(--verre-ombre);
+  -webkit-backdrop-filter:var(--flou);backdrop-filter:var(--flou)}
+.jeu.j-tr{border-top:3px solid #f5a524}.jeu.j-rl{border-top:3px solid #ffd34d}
+.jeu.j-bj{border-top:3px solid #16c784}.jeu.j-pk{border-top:3px solid #ea3943}
+.caisse.j-rl{border-top:3px solid #ffd34d}.caisse.j-bj{border-top:3px solid #16c784}.caisse.j-pk{border-top:3px solid #ea3943}
+.hero{background:var(--verre-fort);border-color:rgba(255,211,77,.35);border-radius:26px}
+.bandeau-defi{background:linear-gradient(145deg,rgba(184,236,47,.14),rgba(184,236,47,.04));border-color:rgba(184,236,47,.35)}
+.angle{background:linear-gradient(145deg,rgba(245,165,36,.16),rgba(245,165,36,.04));border-color:rgba(245,165,36,.35)}
+.expl{border-left:1px solid var(--verre-bord)}
+.jeu,.caisse,.carte-stat,.carte-defi,.walletbig,.salut,.expl,.aide,.obs,.reprise,.lblist{border-radius:22px}
+.mbtn,.btn.ghost,.inp{border-radius:16px}
+.wordbtn,.marchebtn,.lbtabs b,.fen b,.lbmore{border-radius:999px}
+.mbtn.on,.lbtabs b.on,.fen b.on,.jetons b.on{background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600;border-color:transparent}
+.btn{border-radius:18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 8px 22px rgba(245,165,36,.25)}
+.btn.ghost{color:var(--txt)}
+
+/* barres du haut en verre, posées sur le contenu */
+.topbar,.subbar,.stats,.money{background:rgba(10,14,18,.45);-webkit-backdrop-filter:var(--flou);backdrop-filter:var(--flou);
+  border-bottom:1px solid var(--verre-bord)}
+/* dans les jeux, la barre du haut colle au bord de l'écran (elle porte déjà la marge de l'encoche) */
+.page.rl,.page.jeu-bj,.page.jeu-pk,.page.ol{padding-top:0}
+.page.ol .topbar{margin:0 -20px;padding-left:20px;padding-right:20px}
+.aidebtn{min-width:34px;font-size:13px;font-weight:800;color:var(--gold2)}
+
+/* la carte de décision du trading devient une plaque de verre */
+.deck{background:rgba(10,14,18,.4);-webkit-backdrop-filter:var(--flou);backdrop-filter:var(--flou);border-top:1px solid var(--verre-bord)}
+.card{background:var(--verre-fort);border:1px solid rgba(255,255,255,.18);box-shadow:var(--verre-ombre);border-radius:24px}
+.zbtn{border-radius:14px}
+
+/* tapis et feutre : on garde leurs couleurs, avec l'arête de verre */
+.feutre{box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 16px 40px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12);border-radius:26px}
+
+/* feuilles qui glissent du bas : aide, fiche joueur, prolongation */
+.fiche,.prolonge{background:rgba(4,8,12,.55);-webkit-backdrop-filter:blur(26px) saturate(160%);backdrop-filter:blur(26px) saturate(160%)}
+.prolonge .pbody{padding:22px;border-radius:28px;background:var(--verre-fort);border:1px solid var(--verre-bord);box-shadow:var(--verre-ombre)}
+.feuille{position:absolute;inset:0;z-index:95;display:none;align-items:flex-end;justify-content:center;
+  background:rgba(4,8,12,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:0 12px calc(env(safe-area-inset-bottom) + 12px)}
+.feuille.on{display:flex;animation:fondu .2s ease-out}
+.feuille-corps{width:100%;max-width:520px;padding:22px 20px 18px;border-radius:30px;background:var(--verre-fort);
+  border:1px solid rgba(255,255,255,.2);box-shadow:var(--verre-ombre);-webkit-backdrop-filter:blur(30px) saturate(180%);
+  backdrop-filter:blur(30px) saturate(180%);animation:monte .28s cubic-bezier(.2,.9,.3,1)}
+.feuille-titre{display:block;font-size:19px;margin-bottom:14px}
+.etapes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:14px}
+.etapes li{display:flex;gap:12px;align-items:flex-start}
+.etapes s{text-decoration:none;flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  font-weight:800;font-size:13px;background:linear-gradient(150deg,#ffd34d,#f5a524);color:#3a2600}
+.etapes div{display:flex;flex-direction:column;gap:3px}
+.etapes span{font-size:13.5px;line-height:1.45;color:#c9d0da}
+@keyframes fondu{from{opacity:0}to{opacity:1}}
+@keyframes monte{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+
+/* LA barre du bas : une pilule de verre flottante, quatre icônes */
+.tabbar{left:50%;right:auto;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 12px);
+  width:min(92%,420px);grid-template-columns:repeat(4,1fr);gap:6px;padding:7px;border-radius:999px;
+  background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.04) 60%,rgba(255,255,255,.08));
+  border:1px solid rgba(255,255,255,.2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -1px 0 rgba(255,255,255,.05),0 18px 40px rgba(0,0,0,.45);
+  -webkit-backdrop-filter:blur(26px) saturate(180%);backdrop-filter:blur(26px) saturate(180%)}
+.tabbar a{min-height:54px;border-radius:999px;color:rgba(233,236,241,.62);transition:background .2s,color .2s,transform .12s}
+.tabbar a:active{transform:scale(.92)}
+.tabbar a.on{color:#fff;background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.08));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px rgba(0,0,0,.25)}
+.tabbar a.on svg{stroke-width:2.1}
+.page.avec-nav{padding-bottom:calc(env(safe-area-inset-bottom) + 104px)}
+
+/* pas de flou pour qui préfère moins d'effets (et les vieux téléphones qui rament) */
+@media (prefers-reduced-transparency:reduce){
+  .tabbar,.feuille-corps,.hero,.jeu{background:#1a1e25;-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+/* la barre reste lisible même sans flou : un fond teinté sous le reflet */
+.tabbar{background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.04) 60%,rgba(255,255,255,.08)),rgba(14,22,30,.72)}
