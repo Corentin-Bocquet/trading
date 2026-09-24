@@ -284,13 +284,21 @@ function requireAuth(){
 function show(id){ $$('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }
 function go(url){ location.href = url; }
 
-/* barre de navigation du bas : quatre mots, les mêmes partout */
+/* barre de navigation du bas : une barre de verre, quatre icônes */
+const ICONES = {
+  accueil:'<path d="M3.5 10.5 12 3.5l8.5 7V20a1 1 0 0 1-1 1h-4.5v-6h-6v6H4.5a1 1 0 0 1-1-1z"/>',
+  ligne:'<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.5 2 4.5 4.9"/>',
+  classement:'<path d="M7 4h10v4.5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5v1.5A3 3 0 0 0 7.5 10.5M17 6h2.5v1.5a3 3 0 0 1-3 3"/><path d="M12 13.5V17M8.5 20.5h7M9.5 20.5 10 17h4l.5 3.5"/>',
+  compte:'<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20.5c.8-3.6 3.8-5.8 7.5-5.8s6.7 2.2 7.5 5.8"/>'
+};
+const icone = k => `<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONES[k]}</svg>`;
 function rendreNav(){
   const nav = document.querySelector('nav.tabbar'); if(!nav) return;
   const on = nav.dataset.on;
-  const L = [['accueil','index.html','ACCUEIL'],['ligne','salon.html','EN LIGNE'],
-             ['classement','profil.html#classement','CLASSEMENT'],['compte','profil.html','COMPTE']];
-  nav.innerHTML = L.map(([k,h,t])=>`<a href="${h}" data-k="${k}"${k===on?' class="on" aria-current="page"':''}>${t}</a>`).join('');
+  const L = [['accueil','index.html','Accueil'],['ligne','salon.html','Jouer en ligne'],
+             ['classement','profil.html#classement','Classement'],['compte','profil.html','Mon compte']];
+  nav.setAttribute('aria-label','Navigation principale');
+  nav.innerHTML = L.map(([k,h,t])=>`<a href="${h}" data-k="${k}" aria-label="${t}" title="${t}"${k===on?' class="on" aria-current="page"':''}>${icone(k)}</a>`).join('');
   nav.querySelectorAll('a').forEach(a=>a.addEventListener('click', e=>{
     // sur la page compte, CLASSEMENT et COMPTE font défiler au lieu de recharger
     const cible = a.dataset.k==='classement' ? '#classement' : a.dataset.k==='compte' ? '#haut' : null;
@@ -300,6 +308,49 @@ function rendreNav(){
   }));
 }
 rendreNav();
+
+/* ---------- « Comment jouer » : trois étapes, ouvertes seules la première fois ---------- */
+const AIDES = {
+  trading:{titre:'Comment jouer au trading', etapes:[
+    ['Regarde le graphique','Un vrai marché, sans nom ni date. Appuie sur <b>−</b> pour dézoomer et voir d’où vient le prix.'],
+    ['Glisse la carte du bas','<b>À droite</b> pour acheter, <b>à gauche</b> pour attendre, <b>vers le haut</b> pour encaisser tes gains.'],
+    ['Plus tu glisses loin, plus tu engages','Petits paliers = moins de risque. À la fin, l’actif est révélé avec ta note.']]},
+  roulette:{titre:'Comment jouer à la roulette', etapes:[
+    ['Choisis un jeton','1 €, 2 €, 5 €… dans la rangée JETON.'],
+    ['Touche une case du tapis','Un numéro paie 35 fois, une douzaine 2 fois, rouge ou noir 1 fois. Tu peux miser sur plusieurs cases.'],
+    ['Lance la bille','Le bouton <b>LANCER LA BILLE</b>. Le gain arrive tout seul dans ta caisse.']]},
+  blackjack:{titre:'Comment jouer au blackjack', etapes:[
+    ['Choisis ta mise','Ajoute des jetons, puis <b>DISTRIBUER</b>.'],
+    ['Approche 21 sans dépasser','<b>TIRER</b> prend une carte, <b>RESTER</b> garde ta main. Les figures valent 10, l’as 1 ou 11.'],
+    ['Bats le croupier','Il tire jusqu’à 17. Plus près de 21 que lui : tu gagnes ta mise. Un blackjack paie 1,5 fois.']]},
+  poker:{titre:'Comment jouer au poker', etapes:[
+    ['Lance une main','<b>NOUVELLE MAIN</b> : tu reçois deux cartes, cinq cartes communes arrivent au milieu.'],
+    ['À ton tour, choisis','<b>SUIVRE</b> paie la mise, <b>RELANCER</b> monte, <b>SE COUCHER</b> abandonne la main.'],
+    ['La meilleure main gagne le pot','La meilleure combinaison de 5 cartes parmi tes 2 et les 5 communes.']]},
+  ligne:{titre:'Jouer avec tes amis', etapes:[
+    ['Crée une table','Choisis le jeu puis <b>CRÉER UNE TABLE</b>.'],
+    ['Invite','Le bouton <b>INVITER</b> envoie un lien, ou donne le code à 4 lettres.'],
+    ['Joue comme en solo','Chacun mise sur sa propre caisse. Ce que tu gagnes ici, tu le gardes.']]}
+};
+function ouvrirAide(k){
+  const A = AIDES[k]; if(!A) return;
+  let el = document.getElementById('aide-feuille');
+  if(!el){ el = document.createElement('div'); el.id='aide-feuille'; el.className='feuille';
+    (document.getElementById('app')||document.body).appendChild(el); }
+  el.innerHTML = `<div class="feuille-corps verre" role="dialog" aria-modal="true" aria-label="${A.titre}">
+    <b class="feuille-titre">${A.titre}</b>
+    <ol class="etapes">${A.etapes.map(([t,d],i)=>`<li><s>${i+1}</s><div><b>${t}</b><span>${d}</span></div></li>`).join('')}</ol>
+    <button class="btn" id="aide-ok">J’AI COMPRIS</button></div>`;
+  el.classList.add('on');
+  const fermer = ()=>{ el.classList.remove('on'); try{ localStorage.setItem('cyc_aide_'+k,'1'); }catch(e){} };
+  el.onclick = e=>{ if(e.target===el) fermer(); };
+  document.getElementById('aide-ok').onclick = fermer;
+}
+document.querySelectorAll('[data-aide]').forEach(b=>{
+  b.addEventListener('click', ()=>ouvrirAide(b.dataset.aide));
+  let vu = true; try{ vu = localStorage.getItem('cyc_aide_'+b.dataset.aide)==='1'; }catch(e){}
+  if(!vu && localStorage.getItem('cyc_tok')) setTimeout(()=>ouvrirAide(b.dataset.aide), 500);
+});
 
 /* le lien « mot de passe oublié » peut ramener sur n'importe quelle page */
 if(/type=recovery/.test(location.hash) && !/login\.html/.test(location.pathname))

@@ -25,7 +25,7 @@ function lancer(){
   G.prof.cashRl -= total;               // la mise quitte la caisse au lancement
   Cloud.sauver();                       // et c'est enregistré : recharger la page ne la rend pas
   majSoldes();
-  $('#b-lancer').disabled = true;
+  $('#b-lancer').disabled = true; $('#b-lancer').textContent = 'RIEN NE VA PLUS…';
   Audio_.play('whoosh');
 
   // le numéro est tiré ici ; l'animation ne fait que rejoindre la case
@@ -174,6 +174,8 @@ function dessinerMises(){
     else if(j) j.remove();
   });
   $('#b-lancer').classList.toggle('pret', RL.total()>0);
+  // le bouton dit toujours quoi faire ensuite
+  if(!RL.tourne) $('#b-lancer').textContent = RL.total()>0 ? 'LANCER LA BILLE · '+RL.total()+' €' : 'TOUCHE UNE CASE POUR MISER';
   const rm = $('#b-remiser'); if(rm) rm.disabled = !RL.precedentes || RL.total()>0;
   majSoldes();
 }

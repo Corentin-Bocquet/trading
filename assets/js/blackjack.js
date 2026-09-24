@@ -135,7 +135,8 @@ function messageBJ(t){
 function peindreBJ(resume, ruine){
   const cacheTrou = BJ.phase==='joueur';
   const pc = pointsBJ(cacheTrou ? [BJ.croupier[0]] : BJ.croupier).total;
-  $('#bj-croupier').innerHTML = BJ.croupier.map((c,i)=>carteHTML(c, cacheTrou && i===1)).join('');
+  $('#bj-croupier').innerHTML = BJ.croupier.map((c,i)=>carteHTML(c, cacheTrou && i===1)).join('')
+    || '<span class="note" style="align-self:center">Choisis ta mise en bas, puis appuie sur DISTRIBUER.</span>';
   $('#bj-pc').textContent = BJ.croupier.length ? (cacheTrou ? pc+' +' : pc) : '';
 
   $('#bj-mains').innerHTML = BJ.mains.map((m,i)=>{
@@ -169,6 +170,7 @@ function peindreBJ(resume, ruine){
 function majCaisseBJ(){
   $('#bj-solde').textContent = fmt(G.prof.cashBj)+' €';
   $('#bj-mise').textContent  = BJ.mise+' €';
+  $('#b-distribuer').textContent = 'DISTRIBUER · '+BJ.mise+' €';
   $('#bj-mains-nb').textContent = fmt(G.prof.mainsBj||0);
   const s = G.prof.streak||0;
   $('#bj-serie').textContent = s ? s+' j' : '—';
