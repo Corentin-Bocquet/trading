@@ -98,7 +98,7 @@
     if(!p){ box.innerHTML=''; return; }
     box.innerHTML = `<div class="reprise">
       <div><u>PARTIE EN COURS</u><b>Manche ${Math.min(p.round+1,p.decs.length)} sur ${p.decs.length}</b>
-        <span class="note">${esc(NOM_MARCHE(p.marche))} · commencée le ${new Date(p.t).toLocaleDateString('fr-FR')}</span></div>
+        <span class="note">${p.defi ? 'DÉFI DU JOUR' : esc(NOM_MARCHE(p.marche))} · commencée le ${new Date(p.t).toLocaleDateString('fr-FR')}</span></div>
       <button class="btn play" id="b-reprendre">REPRENDRE</button>
       <button class="lbmore" id="b-abandon">ABANDONNER ET EN COMMENCER UNE AUTRE</button></div>`;
     $('#b-reprendre').onclick = ()=>{ Audio_.play('click'); reprendrePartie(p); };
@@ -106,6 +106,11 @@
   }
 
   // --- écran de réglages : part engagée et nombre de manches
+  /* --- arrivée depuis la page du défi : on lance directement le cycle du jour --- */
+  const Q = new URLSearchParams(location.search);
+  const viaDefi = !!Q.get('defi'), viaReprise = !!Q.get('reprendre');
+  if(viaDefi || viaReprise) history.replaceState(null,'',location.pathname);
+
   const sp=$('#su-part'), sm=$('#su-manches');
   sp.value = Math.round((G.reglages.part||1)*100);
   sm.value = G.reglages.manches||10;
@@ -126,4 +131,13 @@
     G.reglages = {part:+sp.value/100, manches:+sm.value};
     saveLocal(); oublierPartie(); startSession();
   };
+
+  if(viaReprise){ const p = partieEnCours(); if(p) return reprendrePartie(p); }
+  if(viaDefi){
+    const p = partieEnCours();
+    if(p && p.defi===jourLocal()) return reprendrePartie(p);
+    if(defiJoue()) return go('defi.html');
+    const d = defiDuJour();
+    if(d){ oublierPartie(); startSession(d.id, jourLocal()); }
+  }
 })();

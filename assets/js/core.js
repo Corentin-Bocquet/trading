@@ -253,10 +253,24 @@ function wireModeSwitch(){
   applyMode();
 }
 
+/* ---------- défi du jour : le même cycle pour tout le monde ----------
+   Tiré du catalogue à partir de la date : chaque appareil tombe sur le même,
+   sans serveur. Le nom du marché enregistré avec le cycle sert au classement. */
+function defiDuJour(jour){
+  jour = jour || jourLocal();
+  if(typeof CATALOGUE==='undefined') return null;
+  let h = 2166136261;
+  for(const c of 'defi:'+jour){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const L = CATALOGUE.scenarios;
+  return L[(h>>>0) % L.length];
+}
+const marcheDefi = jour => 'DÉFI '+(jour||jourLocal());
+const defiJoue = () => { try{ return localStorage.getItem('cyc_defi')===jourLocal(); }catch(e){ return false; } };
+
 /* ---------- déconnexion : rien du compte précédent ne doit rester ---------- */
 function oublierCompte(){
   ['cyc_tok','cyc_ref','cyc_uid','cyc_sale','cyc_file','cyc_prof','cyc_hist','cyc_partie','cyc_table',
-   'cyc_last'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+   'cyc_last','cyc_defi'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
 }
 
 /* ---------- accès réservé aux comptes ---------- */

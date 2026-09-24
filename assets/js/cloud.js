@@ -120,7 +120,7 @@ const Cloud = (() => {
      pour connaître le portefeuille de départ du premier affiché */
   async function historique(uid){
     const s = await api('/rest/v1/cyc_sessions?user_id=eq.'+uid
-      +'&select=created_at,scenario_id,asset,score,xp_gained,paliers,cash_after&order=created_at.desc&limit=61');
+      +'&select=created_at,scenario_id,asset,score,xp_gained,paliers,cash_after,marche,detail&order=created_at.desc&limit=61');
     const rows = (s||[]).reverse();
     let prec = CAPITAL_DEPART;
     if(rows.length===61){ const b=rows.shift(); if(b.cash_after!=null) prec = +b.cash_after; }
@@ -128,8 +128,11 @@ const Cloud = (() => {
       const cash = x.cash_after!=null ? +x.cash_after : null;
       const gain = cash!=null ? cash-prec : 0;
       if(cash!=null) prec = cash;
+      const d = x.detail || {};
       return {t:new Date(x.created_at).getTime(), id:x.scenario_id, a:x.asset,
-        score:+x.score, bons:0, xp:x.xp_gained, n:x.paliers, cash, gain};
+        score:+x.score, bons:0, xp:x.xp_gained, n:x.paliers, b:x.paliers, cash, gain,
+        zb:d.zb||null, recul:d.recul||null, cat:d.cat||null,
+        defi: /^DÉFI /.test(x.marche||'') ? x.marche.slice(5) : null};
     });
   }
 
@@ -200,7 +203,7 @@ const Cloud = (() => {
     const ligne = {user_id:uid, scenario_id:rec.id, asset:rec.a, score:Math.round(rec.score),
       grade:verdictGlobal(rec.score).k, avg_zone:rec.zPru!=null?Number(rec.zPru.toFixed(4)):null,
       paliers:detail.buys, xp_gained:rec.xp, cash_after:Math.round(rec.cash),
-      marche:NOM_MARCHE(G.marche), detail:detail};
+      marche: rec.defi ? marcheDefi(rec.defi) : NOM_MARCHE(G.marche), detail:detail};
     const file = lireFile(); file.push({uid, ligne, rec}); ecrireFile(file);
     if(G.token && G.sbUp!==false) envoyerFile();
   }
@@ -319,6 +322,35 @@ const Cloud = (() => {
     await api('/rest/v1/cyc_push?endpoint=eq.'+encodeURIComponent(endpoint), {method:'DELETE'});
   }
 
+  /* classement du défi d'un jour : un seul essai compté par joueur, le premier */
+  async function classementDefi(jour){
+    const moi = G.hist.slice().reverse().find(h=>h.defi===jour);
+    const monRang = l => { const i = l.findIndex(x=>x.moi); return i>=0 ? i+1 : 0; };
+    if(G.token && G.sbUp!==false){
+      try{
+        const s = await api('/rest/v1/cyc_sessions?marche=eq.'+encodeURIComponent(marcheDefi(jour))
+          +'&select=user_id,score,created_at&order=created_at.asc&limit=500');
+        const vus = new Map();
+        (s||[]).forEach(x=>{ if(!vus.has(x.user_id)) vus.set(x.user_id, +x.score); });
+        const ids = [...vus.keys()];
+        let noms = {};
+        if(ids.length){
+          const p = await api('/rest/v1/cyc_profiles?select=id,pseudo,avatar&id=in.('+ids.map(encodeURIComponent).join(',')+')');
+          (p||[]).forEach(x=>{ noms[x.id] = x; });
+        }
+        const uid = G.user && G.user.id;
+        if(moi && uid && !vus.has(uid)) vus.set(uid, moi.score);
+        const liste = [...vus.entries()].map(([id,score])=>({id, score,
+          pseudo: id===uid ? G.prof.pseudo : ((noms[id]||{}).pseudo||'?'),
+          avatar: id===uid ? G.prof.avatar : photoSure((noms[id]||{}).avatar), moi: id===uid}))
+          .sort((a,b)=>b.score-a.score);
+        return {liste, rang:monRang(liste), total:liste.length};
+      }catch(e){ console.warn('defi', e.message); }
+    }
+    const liste = moi ? [{pseudo:G.prof.pseudo, avatar:G.prof.avatar, score:moi.score, moi:true}] : [];
+    return {liste, rang:monRang(liste), total:liste.length, horsLigne:true};
+  }
+
   async function oubli(mail, retour){
     const r = await fetch(SB_URL+'/auth/v1/recover?redirect_to='+encodeURIComponent(retour), {method:'POST',
       headers:{'apikey':SB_KEY,'Content-Type':'application/json'}, body:JSON.stringify({email:mail})});
@@ -334,7 +366,7 @@ const Cloud = (() => {
   }
 
   return {
-    oubli, nouveauMdp,
+    oubli, nouveauMdp, classementDefi,
     ping, saveProfil, savePush, removePush, sessionsDe, sauver,
     // anciens noms, gardés pour les pages de jeu
     saveRoulette: sauver, saveJeu: sauver,

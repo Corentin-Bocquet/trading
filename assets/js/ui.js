@@ -302,7 +302,8 @@ function brancherBilan(sc){
   $('#b-seechart').onclick = ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
     G.endVisible = sc.end; G.decIdx = sc.end; modeRevue(true);
     show('s-game'); Chart.resize(); Chart.draw(); updateGate(); };
-  $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
+  $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go(G.defi ? 'defi.html' : 'profil.html#classement'); };
+  if(G.defi) $('#b-prof').textContent = 'CLASSEMENT DU DÉFI';
 }
 
 /* ============================================================
@@ -394,4 +395,75 @@ function renderResult(R){
     <button class="btn ghost" id="b-seechart">VOIR LE GRAPHIQUE COMPLET</button>
     <button class="btn ghost" id="b-prof">CLASSEMENT ET PROGRESSION</button>`;
   brancherBilan(sc);
+}
+
+/* ============================================================
+   TES STATS : ce que ton historique dit de ta méthode
+   ============================================================ */
+function rendreStats(hist){
+  const H = (hist||[]).filter(h=>h && h.score!=null);
+  if(!H.length) return '<p class="note">Joue un premier cycle de trading pour voir tes stats.</p>';
+  const moy = a => a.length ? a.reduce((t,v)=>t+v,0)/a.length : null;
+  const virg = (v,d=1) => v==null ? '-' : String(Math.round(v*10**d)/10**d).replace('.',',');
+  const avecB = H.filter(h=>h.b!=null), avecR = H.filter(h=>h.recul!=null);
+  const pal = moy(avecB.map(h=>h.b)), recul = moy(avecR.map(h=>h.recul));
+  const note = moy(H.slice(-20).map(h=>h.score));
+
+  // où tombent les achats dans le cycle
+  const zb = [0,0,0,0]; H.forEach(h=>{ if(Array.isArray(h.zb)) h.zb.forEach((n,i)=>zb[i]+=n||0); });
+  const tot = zb.reduce((a,b)=>a+b,0);
+  const NOMS = ['zone basse','moitié basse','tiède','près du sommet'], COUL = ['#16c784','#f5a524','#868d9a','#ea3943'];
+  const barres = tot ? `<div class="zbars">${zb.map((n,i)=>{ const p=n/tot*100;
+      return `<div><span>${Math.round(p)} %</span><i style="height:${Math.max(4,p*0.9)}px;background:${COUL[i]}"></i><u>${NOMS[i]}</u></div>`; }).join('')}</div>`
+    : '<p class="note">La répartition apparaîtra après ton prochain cycle joué.</p>';
+
+  // meilleur marché : note moyenne par type de marché, deux cycles minimum
+  const parCat = {}; H.forEach(h=>{ if(h.cat && h.cat!=='defi') (parCat[h.cat]=parCat[h.cat]||[]).push(h.score); });
+  const cats = Object.entries(parCat).filter(([,v])=>v.length>=2).map(([k,v])=>[k,moy(v)]).sort((a,b)=>b[1]-a[1]);
+  const nomCat = k => (MARCHES.find(m=>m.k===k)||{nom:k.toUpperCase()}).nom;
+
+  // tendance : les 5 derniers cycles contre les 5 d'avant
+  const r5 = moy(H.slice(-5).map(h=>h.score)), p5 = moy(H.slice(-10,-5).map(h=>h.score));
+  const tendance = H.length<6 ? 'encore trop peu de cycles pour une tendance'
+    : r5 > p5+1 ? '<b class="pos">en progrès</b> sur tes 5 derniers cycles'
+    : r5 < p5-1 ? '<b class="neg">en baisse</b> sur tes 5 derniers cycles' : 'stable sur tes 5 derniers cycles';
+
+  // l'angle mort : le conseil le plus utile, un seul
+  let angle;
+  if(tot && zb[3]/tot >= 0.15) angle = `${Math.round(zb[3]/tot*100)} % de tes achats se font près du sommet. Dézoome davantage avant d’acheter : c’est là que la douleur commence.`;
+  else if(pal!=null && pal < 3) angle = `Tu poses ${virg(pal)} palier${pal>=2?'s':''} par cycle en moyenne. Vise 4 ou plus : fractionner est ce qui protège quand tu te trompes de zone.`;
+  else if(recul!=null && recul < 3) angle = `Tu décides avec ${virg(recul)} an${recul>=2?'s':''} de recul en moyenne. Dézoome à 5 ans ou plus : le cycle précédent donne la vraie échelle.`;
+  else if(tot && zb[0]/tot >= 0.3) angle = `${Math.round(zb[0]/tot*100)} % de tes achats tombent dans la zone basse. C’est exactement la méthode : continue.`;
+  else angle = 'Rien de flagrant : garde tes paliers réguliers et ton recul, c’est ce qui paie sur vingt cycles.';
+
+  return `
+    <div class="statgrid">
+      <div><u>NOTE MOYENNE</u><b>${note>0?'+':''}${virg(note)}</b></div>
+      <div><u>PALIERS / CYCLE</u><b>${virg(pal)}</b></div>
+      <div><u>RECUL MOYEN</u><b>${recul!=null?virg(recul)+' an'+(recul>=2?'s':''):'-'}</b></div>
+    </div>
+    <div class="carte-stat"><u>OÙ TU ACHÈTES DANS LE CYCLE</u>${barres}</div>
+    <div class="carte-stat"><u>TA NOTE DE MÉTHODE, CYCLE APRÈS CYCLE</u>
+      <canvas id="st-notes" style="width:100%;height:90px;display:block"></canvas>
+      <span class="note">Tendance : ${tendance}${cats.length?` · meilleur marché : <b>${esc(nomCat(cats[0][0]))}</b>`:''}</span></div>
+    <div class="angle"><b>Ton angle mort :</b> ${angle}</div>`;
+}
+function dessinerNotes(hist){
+  setTimeout(()=>{
+    const c = document.getElementById('st-notes'); if(!c) return;
+    const d = (hist||[]).filter(h=>h.score!=null).slice(-20).map(h=>h.score);
+    const r = c.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1,2.5);
+    c.width = r.width*dpr; c.height = r.height*dpr;
+    const x = c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+    const W=r.width, H=r.height;
+    if(d.length<2){ x.fillStyle='#5b626e'; x.font='12px sans-serif'; x.textAlign='center';
+      x.fillText('Deux cycles minimum pour tracer la courbe', W/2, H/2); return; }
+    const lo=Math.min(0,...d), hi=Math.max(1,...d);
+    const px=i=>6+i*(W-12)/(d.length-1), py=v=>H-8-(v-lo)/((hi-lo)||1)*(H-16);
+    x.strokeStyle='#2a2f39'; x.setLineDash([4,4]); x.beginPath(); x.moveTo(0,py(0)); x.lineTo(W,py(0)); x.stroke(); x.setLineDash([]);
+    x.strokeStyle='#f5a524'; x.lineWidth=2; x.beginPath();
+    d.forEach((v,i)=> i? x.lineTo(px(i),py(v)) : x.moveTo(px(i),py(v))); x.stroke();
+    d.forEach((v,i)=>{ x.fillStyle = v>=5?'#16c784':v>=0?'#f5a524':'#ea3943';
+      x.beginPath(); x.arc(px(i),py(v),3,0,7); x.fill(); });
+  },30);
 }

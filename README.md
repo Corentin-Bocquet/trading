@@ -148,6 +148,35 @@ ouvre sa fiche** : ses chiffres des deux jeux, sa courbe d'argent et ses dernier
 cycles. Un badge **SÉRIE** indique le nombre de jours d'affilée où il est venu jouer,
 au trading comme à la roulette.
 
+## L'accueil
+
+En haut, ta carte de trading : ton portefeuille, sa courbe, et un bouton qui
+**reprend la partie en cours** (au bon endroit, en un geste) ou lance un nouveau
+cycle. Juste dessous, un bandeau résume où tu en es dans chaque jeu et ta série
+de jours, puis les quatre tuiles de jeu et le **défi du jour**.
+
+## Défi du jour
+
+Page `defi.html`. Chaque jour, **le même cycle pour tout le monde**, tiré du
+catalogue à partir de la date : chaque appareil tombe sur le même, sans serveur.
+Dix manches, **un seul essai**, classement du jour sur la note de méthode (le
+premier essai de chacun compte). Le cycle est enregistré avec le marché
+`DÉFI AAAA-MM-JJ`, ce qui suffit à construire le classement. L'actif du jour est
+révélé le lendemain, avec le podium de la veille.
+
+## Tes stats
+
+Sur la page compte : note moyenne, paliers par cycle, recul moyen avant de
+décider, **où tombent tes achats dans le cycle** (zone basse, moitié basse,
+tiède, près du sommet), courbe de ta note cycle après cycle, meilleur marché,
+et **ton angle mort** : le conseil le plus utile tiré de ton historique.
+Ces mesures sont enregistrées avec chaque cycle (colonne `detail`).
+
+## Charte « terminal doré »
+
+Nuit, or, chiffres en JetBrains Mono, titres en Space Grotesk. Chaque jeu garde
+sa couleur (or, jaune, vert, rouge) sur le bord haut de sa tuile et de sa caisse.
+
 ## Partie interrompue, partie reprise
 
 La partie de trading est sauvegardée à chaque manche. Si l'app se ferme (appel,
@@ -260,7 +289,8 @@ roulette.html              roulette solo
 blackjack.html             blackjack solo
 poker.html                 poker solo
 salon.html                 jouer à plusieurs (hall + table)
-profil.html                classement, courbe de calibration, historique
+profil.html                caisses, stats, classement, historique, réglages
+defi.html                  défi du jour et son classement
 manifest.webmanifest       métadonnées PWA (nom « Trading », icônes)
 sw.js                      service worker : jeu disponible hors connexion
 assets/css/style.css       design system complet
@@ -287,6 +317,7 @@ assets/js/app.js           amorçage de la page de jeu
 assets/js/home.js          amorçage de l'accueil
 assets/js/auth.js          amorçage des pages connexion / inscription
 assets/js/profil.js        amorçage de la page compte
+assets/js/defi.js          page du défi du jour
 assets/js/notif.js         abonnement au rappel quotidien
 tools/rappel.mjs           envoi des rappels (exécuté par GitHub Actions)
 assets/sounds/*.mp3        effets sonores

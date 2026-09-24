@@ -41,7 +41,8 @@ function sauverPartie(){
     localStorage.setItem('cyc_partie', JSON.stringify({
       uid:localStorage.getItem('cyc_uid'), id:G.sc.id, end:G.sc.end, decs:G.decs, round:G.round,
       cash:G.cash, units:G.units, cost:G.cost, totSpent:G.totSpent, totUnits:G.totUnits,
-      capital:G.capital, horsJeu:G.horsJeu, actions:G.actions, marche:G.marche, t:Date.now()}));
+      capital:G.capital, horsJeu:G.horsJeu, actions:G.actions, marche:G.marche, defi:G.defi||null,
+      t:Date.now()}));
   }catch(e){}
 }
 function partieEnCours(){
@@ -68,11 +69,14 @@ async function reprendrePartie(p){
   Object.assign(G, {cash:p.cash, units:p.units, cost:p.cost, totSpent:p.totSpent,
     totUnits:p.totUnits, capital:p.capital, horsJeu:p.horsJeu||0, actions:p.actions||[]});
   G.done = false; G.revealPrices = false; G.showMA = false;
+  G.defi = p.defi || null;
+  if(G.defi) $('#t-marche').textContent = 'DÉFI DU JOUR';
   applyMode(); modeRevue(false);
   setupRound();
 }
 
-async function startSession(forcedId){
+async function startSession(forcedId, defi){
+  G.defi = defi || null;
   const pool = scenariosDuMarche(G.marche);
   let sc;
   if(forcedId) sc = CATALOGUE.scenarios.find(s=>s.id===forcedId);
@@ -84,13 +88,14 @@ async function startSession(forcedId){
   localStorage.setItem('cyc_last', sc.id);
 
   show('s-game');
-  $('#t-marche').textContent = NOM_MARCHE(G.marche);
+  $('#t-marche').textContent = G.defi ? 'DÉFI DU JOUR' : NOM_MARCHE(G.marche);
   $('#t-round').textContent = 'CHARGEMENT…';
   try{ G.ser = await chargerSerie(sc.a); }
   catch(e){ $('#t-round').textContent = 'DONNÉES INDISPONIBLES'; return; }
 
   G.sc = sc;
-  G.decs = construireManches(sc, clamp(Math.round(G.reglages.manches||10), 5, 25));
+  // le défi se joue pour tout le monde en 10 manches, pour que les notes se comparent
+  G.decs = construireManches(sc, G.defi ? 10 : clamp(Math.round(G.reglages.manches||10), 5, 25));
   G.base = G.ser.ohlc[G.decs[0]][3];
   const total = Math.max(SEUIL_RUINE, G.prof.cash || CAPITAL_DEPART);
   const part = clamp(G.reglages.part||1, 0.05, 1);
@@ -345,7 +350,7 @@ function doAction(type, v){
   // aucune décision possible pendant l'animation, la prolongation ou le bilan
   if(G.done || G.revealing || G.pause || G.round >= G.decs.length) return;
   const i = G.decIdx, p = priceAt(i);
-  let A = {type, i, price:p, pct:v, pctCap:0, date:G.ser.dates[i]};
+  let A = {type, i, price:p, pct:v, pctCap:0, date:G.ser.dates[i], recul:G.maxSpanSeen};
   if(type==='buy'){
     const eur = G.cash*v;
     G.cash -= eur; G.units += eur/p; G.cost += eur;
@@ -483,10 +488,18 @@ function endSession(){
   G.prof.best = Math.max(G.prof.best, Math.round(score*10)/10);
   const monte = G.prof.level > avantNiv;
 
+  // de quoi nourrir « Tes stats » : où tombent les achats, le recul pris, le marché
+  const zb = [0,0,0,0], K = {exc:0,cor:1,tie:2,bad:3};
+  buys.forEach(a=>{ zb[K[a.g.k]]++; });
+  const recul = G.actions.length
+    ? Math.round(G.actions.reduce((t,a)=>t+(a.recul||0),0)/G.actions.length/52*10)/10 : null;
+  const cat = G.defi ? 'defi' : (G.marche && G.marche.cat) || 'tout';
   const rec = {t:Date.now(), id:sc.id, a:sc.a, score, zPru, bons, xp:xpGain,
-               n:G.actions.length, cash:G.prof.cash, gain:Math.round(gainCycle), ruine};
+               n:G.actions.length, b:buys.length, zb, recul, cat, defi:G.defi||null,
+               cash:G.prof.cash, gain:Math.round(gainCycle), ruine};
+  if(G.defi){ try{ localStorage.setItem('cyc_defi', G.defi); }catch(e){} }
   G.hist.push(rec); saveLocal();
-  Cloud.saveSession(rec, {score, zPru, bonus, valeur, bh, buys:buys.length, diff});
+  Cloud.saveSession(rec, {score, zPru, bonus, valeur, bh, buys:buys.length, diff, zb, recul, cat});
 
   renderResult({sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur:enJeu,bh,xpGain,bons,
                 avant,gainCycle,ruine,diff,horsJeu:G.horsJeu||0});

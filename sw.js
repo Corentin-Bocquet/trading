@@ -4,10 +4,10 @@
    le réseau d'abord : une correction publiée arrive sans rien toucher.
    Incrémente CACHE seulement pour vider les vieux fichiers.
    ============================================================ */
-const CACHE = 'trading-v14';
+const CACHE = 'trading-v15';
 const SHELL = [
   './','index.html','login.html','signup.html','app.html','profil.html','roulette.html',
-  'blackjack.html','poker.html','salon.html',
+  'blackjack.html','poker.html','salon.html','defi.html',
   'manifest.webmanifest',
   'assets/css/style.css','assets/css/salon.css',
   'assets/js/core.js','assets/js/audio.js','assets/js/score.js','assets/data/catalogue.js',
@@ -16,7 +16,7 @@ const SHELL = [
   'assets/js/notif.js','assets/js/regles.js','assets/js/roue.js','assets/js/roulette.js',
   'assets/js/blackjack.js','assets/js/poker.js',
   'assets/js/temps-reel.js','assets/js/salon.js','assets/js/salon-jeux.js',
-  'assets/js/salon-ui.js',
+  'assets/js/salon-ui.js','assets/js/defi.js',
   'assets/sounds/swipe.mp3','assets/sounds/coin.mp3','assets/sounds/zoom.mp3',
   'assets/sounds/whoosh.mp3','assets/sounds/win.mp3','assets/sounds/fail.mp3',
   'assets/sounds/levelup.mp3','assets/sounds/sell.mp3','assets/sounds/click.mp3',

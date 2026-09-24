@@ -127,6 +127,7 @@
   }).join('') || '<p class="note">Aucun cycle joué pour l’instant.</p>';
 
   calibCanvas();
+  $('#p-stats').innerHTML = rendreStats(G.hist); dessinerNotes(G.hist);
 
   /* ---------- classement ---------- */
   let LB=null, mesure=localStorage.getItem('cyc_mesure')||'argent', tout=false;
