@@ -4,7 +4,7 @@
    le réseau d'abord : une correction publiée arrive sans rien toucher.
    Incrémente CACHE seulement pour vider les vieux fichiers.
    ============================================================ */
-const CACHE = 'trading-v16';
+const CACHE = 'trading-v17';
 const SHELL = [
   './','index.html','login.html','signup.html','app.html','profil.html','roulette.html',
   'blackjack.html','poker.html','salon.html','defi.html',
@@ -20,9 +20,9 @@ const SHELL = [
   'assets/sounds/swipe.mp3','assets/sounds/coin.mp3','assets/sounds/zoom.mp3',
   'assets/sounds/whoosh.mp3','assets/sounds/win.mp3','assets/sounds/fail.mp3',
   'assets/sounds/levelup.mp3','assets/sounds/sell.mp3','assets/sounds/click.mp3',
-  'assets/icons/icon-180.png?v=2','assets/icons/icon-192.png?v=2','assets/icons/icon-512.png?v=2',
-  'assets/icons/favicon.png?v=2','assets/icons/logo.png',
-  'assets/icons/icon-512-maskable.png?v=2'
+  'assets/icons/icon-180.png?v=3','assets/icons/icon-192.png?v=3','assets/icons/icon-512.png?v=3',
+  'assets/icons/favicon.png?v=3','assets/icons/logo.png',
+  'assets/icons/icon-512-maskable.png?v=3'
 ];
 
 self.addEventListener('install', e=>{
@@ -69,8 +69,8 @@ self.addEventListener('push', e=>{
   try{ if(e.data) d = Object.assign(d, e.data.json()); }catch(err){}
   e.waitUntil(self.registration.showNotification(d.titre, {
     body: d.texte,
-    icon: 'assets/icons/icon-192.png?v=2',
-    badge: 'assets/icons/icon-192.png?v=2',
+    icon: 'assets/icons/icon-192.png?v=3',
+    badge: 'assets/icons/icon-192.png?v=3',
     tag: 'rappel-quotidien',
     data: {url:'index.html'}
   }));

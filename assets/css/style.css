@@ -1085,3 +1085,10 @@ h2:after{content:"";flex:1;height:1px;background:var(--line)}
 }
 /* la barre reste lisible même sans flou : un fond teinté sous le reflet */
 .tabbar{background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.04) 60%,rgba(255,255,255,.08)),rgba(14,22,30,.72)}
+
+/* icônes nettes : barre centrée sans demi-pixel, trait plein, couleur franche */
+.tabbar{left:0;right:0;margin:0 auto;transform:none}
+.tabbar a{color:rgba(233,236,241,.78)}
+.tabbar a svg{display:block;shape-rendering:geometricPrecision}
+.tabbar a.on svg{stroke-width:2.2}
+.tabbar{width:calc(100% - 32px);max-width:420px}
