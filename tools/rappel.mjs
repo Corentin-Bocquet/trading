@@ -12,9 +12,11 @@ const VAPID_PUBLIC = 'BHYwEnUhflzAepSJoP1h4cu1DBTgrea1WG-_qPSDNTvHBMvPmCSRwLr8MX
 const VAPID_PRIVATE = process.env.VAPID_PRIVATE;
 const SERVICE = process.env.SUPABASE_SERVICE;
 
+// sans les secrets, on s'arrête proprement : la tâche ne doit pas passer
+// au rouge chaque jour tant que le rappel n'est pas configuré
 if(!VAPID_PRIVATE || !SERVICE){
-  console.error('Secrets manquants : VAPID_PRIVATE et SUPABASE_SERVICE.');
-  process.exit(1);
+  console.log('::warning::Rappel non envoyé : secrets VAPID_PRIVATE et SUPABASE_SERVICE à créer dans le dépôt.');
+  process.exit(0);
 }
 webpush.setVapidDetails('mailto:contact@trading.app', VAPID_PUBLIC, VAPID_PRIVATE);
 

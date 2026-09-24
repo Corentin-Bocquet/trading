@@ -20,11 +20,16 @@
     $('#p-wallet').innerHTML = `<u>TRADING</u><b>${dollars(G.prof.cash)}</b>
       <i style="color:${g>=0?'#5fe8b6':'#ff9098'}">${g>=0?'+':'−'}$${fmt(Math.abs(g))} depuis le début</i>
       ${G.prof.ruines?`<span class="ruine big">${G.prof.ruines} RUINE${G.prof.ruines>1?'S':''}</span>`:''}`;
-    const w2 = $('#p-wallet-rl');
-    if(w2){ const gr = gainRlDe(G.prof);
-      w2.innerHTML = `<u>ROULETTE</u><b>${fmt(G.prof.cashRl)} €</b>
-      <i style="color:${gr>=0?'#5fe8b6':'#ff9098'}">${gr>=0?'+':'−'}${fmt(Math.abs(gr))} € · ${fmt(G.prof.toursRl||0)} tours</i>
-      ${G.prof.ruinesRl?`<span class="ruine big">${G.prof.ruinesRl} RUINE${G.prof.ruinesRl>1?'S':''}</span>`:''}`; }
+    // les trois caisses de casino, chacune cliquable vers son jeu
+    const carte = (j, cls, info) => { const gj = gainJeu(G.prof, j), r = ruinesDe(G.prof, j);
+      return `<a class="caisse ${cls}" href="${JEUX[j].page}"><u>${JEUX[j].nom}</u>
+        <b>${fmt(caisseDe(G.prof,j))} €</b>
+        <i style="color:${gj>=0?'#5fe8b6':'#ff9098'}">${gj>=0?'+':'−'}${fmt(Math.abs(gj))} €</i>
+        <span class="note">${info}${r?` · ${r} ruine${r>1?'s':''}`:''}</span></a>`; };
+    $('#p-caisses').innerHTML =
+      carte('roulette','j-rl', fmt(G.prof.toursRl||0)+' tours') +
+      carte('blackjack','j-bj', fmt(G.prof.mainsBj||0)+' mains') +
+      carte('poker','j-pk', fmt(G.prof.mainsPk||0)+' mains');
   }
   entete();
   $('#p-mission').innerHTML = missionBar();
@@ -84,6 +89,11 @@
   };
 
   /* ---------- réglages ---------- */
+  const son=$('#s-son');
+  const peindreSon=()=>{ son.classList.toggle('on',Audio_.isOn()); son.setAttribute('aria-checked',Audio_.isOn()?'true':'false'); };
+  peindreSon();
+  son.onclick=()=>{ Audio_.toggle(); peindreSon(); Audio_.play('click'); };
+
   const sw=$('#s-gate');
   function peindre(){ sw.classList.toggle('on',G.gateOn); sw.setAttribute('aria-checked',G.gateOn?'true':'false'); }
   peindre();
@@ -109,7 +119,7 @@
   /* ---------- historique ---------- */
   $('#p-hist').innerHTML = G.hist.slice().reverse().slice(0,15).map(h=>{
     const gain = h.gain!=null ? h.gain : 0;
-    return `<div class="kv"><span>${nomActif(h.a)}
+    return `<div class="kv"><span>${esc(nomActif(h.a))}
       <span style="color:var(--dim)">· ${new Date(h.t).toLocaleDateString('fr-FR')}</span></span>
       <span style="display:flex;gap:9px;align-items:center">
       <b style="color:${gain>=0?'#5fe8b6':'#ff9098'}">${gain>=0?'+':'−'}$${fmt(Math.abs(gain))}</b>
@@ -117,9 +127,20 @@
   }).join('') || '<p class="note">Aucun cycle joué pour l’instant.</p>';
 
   calibCanvas();
+  $('#p-stats').innerHTML = rendreStats(G.hist); dessinerNotes(G.hist);
 
   /* ---------- classement ---------- */
   let LB=null, mesure=localStorage.getItem('cyc_mesure')||'argent', tout=false;
+  if(!MESURES[mesure]) mesure='argent';
+  const jeuDe = m => (MESURES[m]||MESURES.argent).jeu;
+  let jeuCharge = null;
+  async function chargerClassement(){
+    const j = jeuDe(mesure);
+    if(jeuCharge===j && LB) return rendreClassement();
+    $('#p-lb').innerHTML = '<p class="note">Chargement…</p>';
+    LB = await Cloud.leaderboard(j); jeuCharge = j;
+    rendreClassement();
+  }
   function rendreClassement(){
     if(!LB) return;
     $('#p-lb').innerHTML = leaderboard(LB.list, LB.rank, LB.demo, LB.moi, mesure, tout);
@@ -132,15 +153,20 @@
       b.onclick=()=>{ Audio_.play('click');
         mesure = ({trading:'argent', roulette:'caisse',
                    blackjack:'caissebj', poker:'cavepk'})[b.dataset.j] || 'argent';
-        localStorage.setItem('cyc_mesure',mesure); rendreClassement(); };
+        localStorage.setItem('cyc_mesure',mesure); chargerClassement(); };
     });
     const more=$('#b-lbmore');
     if(more) more.onclick=()=>{ Audio_.play('click'); tout=!tout; rendreClassement(); };
     brancherLignes(LB.list);
   }
-  LB = await Cloud.leaderboard();
-  rendreClassement();
+  $('#b-out').onclick = ()=>{
+    if(Cloud.enAttente() && !confirm('Une partie de ta progression n’est pas encore envoyée au serveur. Te déconnecter quand même ?')) return;
+    oublierCompte(); go('index.html'); };
 
-  $('#b-out').onclick = ()=>{ localStorage.removeItem('cyc_tok');
-    localStorage.removeItem('cyc_ref'); go('index.html'); };
+  // arrivée par l'onglet CLASSEMENT : on y va directement
+  if(location.hash==='#classement'){
+    const nav=$('nav.tabbar'); if(nav) nav.querySelectorAll('a').forEach(a=>a.classList.toggle('on', a.dataset.k==='classement'));
+    setTimeout(()=>{ const h=$('#classement'); if(h) h.scrollIntoView(); }, 60);
+  }
+  await chargerClassement();
 })();

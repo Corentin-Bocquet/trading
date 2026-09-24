@@ -73,13 +73,15 @@ function peindreHall(liste){
   if(enLigne) enLigne.innerHTML = autres.length
     ? autres.map(j=>`<div class="lbline">
         ${avatar(j.pseudo, j.avatar)}
-        <div class="nm">${j.pseudo}</div>
+        <div class="nm">${esc(j.pseudo)}</div>
         <div class="pt">${j.table ? (JEUX[j.jeu]||{nom:'EN TABLE'}).nom : 'DANS LE HALL'}</div>
       </div>`).join('')
     : '<p class="note">Personne d’autre en ligne pour l’instant.</p>';
 
   const tables = {};
-  liste.forEach(j=>{ if(j.table){ (tables[j.table] = tables[j.table] || {jeu:j.jeu, n:0}).n++; } });
+  liste.forEach(j=>{ if(j.table && /^[A-Z0-9]{4}$/.test(j.table) && JEUX[j.jeu]){
+    (tables[j.table] = tables[j.table] || {jeu:j.jeu, n:0}).n++; } });
+  S.tablesOuvertes = tables;
   const box = $('#hall-tables');
   if(box) box.innerHTML = Object.keys(tables).length
     ? Object.entries(tables).map(([code,t])=>`
@@ -97,17 +99,22 @@ function peindreHall(liste){
 /* ---------- table ---------- */
 async function rejoindreTable(code, jeu){
   await preparerCles();
-  S.code = code.toUpperCase(); S.jeu = jeu; S.etat = null;
+  S.code = code.toUpperCase();
+  // le jeu d'une table existante est celui de la table, pas celui coché dans le hall
+  const connue = S.tablesOuvertes && S.tablesOuvertes[S.code];
+  S.jeu = connue ? connue.jeu : jeu; S.etat = null; jeu = S.jeu;
   localStorage.setItem('cyc_table', JSON.stringify({code:S.code, jeu}));
 
   S.canal = TempsReel.canal('salon:'+S.code, {
     cle: S.moi.id,
     meta: {id:S.moi.id, pseudo:S.moi.pseudo, avatar:S.moi.avatar,
-           caisse: caisseDe(G.prof, jeu), pub:S.cles.pub, pret:false},
+           caisse: caisseDe(G.prof, jeu), pub:S.cles.pub, pret:false, depuis:Date.now()},
     surPresence: liste=>{
       const vus = new Map();
       liste.forEach(j=>{ if(j.id) vus.set(j.id, j); });
-      S.joueurs = [...vus.values()].sort((a,b)=>a.id<b.id?-1:1);
+      // l'hôte est le premier arrivé : un nouveau venu ne prend jamais la main
+      // en pleine partie (et tout le monde fait le même tri, donc le même choix)
+      S.joueurs = [...vus.values()].sort((a,b)=>((a.depuis||0)-(b.depuis||0)) || (a.id<b.id?-1:1));
       S.hote = S.joueurs.length ? S.joueurs[0].id : null;
       peindreTable();
       if(estHote()) hoteVerifie();
@@ -117,6 +124,10 @@ async function rejoindreTable(code, jeu){
       // remplacerait son état par une copie et ses minuteries en cours
       // travailleraient sur un objet devenu orphelin
       if(event==='etat'){ if(estHote()) return;
+                          // table créée pour un autre jeu que celui choisi : on s'aligne
+                          if(payload && payload.jeu && payload.jeu!==S.jeu && JEUX[payload.jeu]){
+                            S.jeu = payload.jeu; localStorage.setItem('cyc_table', JSON.stringify({code:S.code, jeu:S.jeu}));
+                            signalerHall(); peindreTable(); }
                           S.etat = payload; appliquerEtat(payload); }
       else if(event==='action' && estHote()) hoteAction(payload.de, payload.action);
       else if(event==='chat') ajouterChat(payload);
@@ -157,13 +168,14 @@ function seDeclarerPret(pret){
 function montrer(quoi){
   $('#vue-hall').style.display  = quoi==='hall'  ? '' : 'none';
   $('#vue-table').style.display = quoi==='table' ? '' : 'none';
+  const nav = $('nav.tabbar'); if(nav) nav.style.display = quoi==='hall' ? '' : 'none';
 }
 
 function ajouterChat(p){
   const z = $('#chat'); if(!z) return;
   const d = document.createElement('div');
   d.className = 'chatline';
-  d.innerHTML = `<b>${p.pseudo}</b> ${p.texte}`;
+  d.innerHTML = `<b>${esc(p.pseudo)}</b> ${esc(String(p.texte||'').slice(0,120))}`;
   z.appendChild(d); z.scrollTop = z.scrollHeight;
   while(z.children.length>40) z.removeChild(z.firstChild);
 }
@@ -177,7 +189,7 @@ function peindreTable(){
   $('#t-joueurs').innerHTML = S.joueurs.map(j=>`
     <div class="lbline${j.id===S.moi.id?' me':''}">
       ${avatar(j.pseudo, j.avatar)}
-      <div class="nm">${j.pseudo}${j.id===S.hote?' <span class="serie">HÔTE</span>':''}</div>
+      <div class="nm">${esc(j.pseudo)}${j.id===S.hote?' <span class="serie">HÔTE</span>':''}</div>
       <div class="pt">${sousJeu(j.caisse!=null?j.caisse:JEUX[S.jeu].depart, S.jeu)}
         ${j.pret?'<span class="pretok">PRÊT</span>':''}</div>
     </div>`).join('');
@@ -212,10 +224,21 @@ function peindreTable(){
     rejoindreTable(codeAleatoire(), jeu); };
   $('#b-rejoindre').onclick = ()=>{ Audio_.play('click');
     const c = ($('#code-saisi').value||'').trim().toUpperCase();
-    if(c.length<4){ $('#hall-err').textContent = 'Entre le code à 4 lettres de la table.'; return; }
+    if(!/^[A-Z0-9]{4}$/.test(c)){ $('#hall-err').textContent = 'Entre le code à 4 caractères de la table.'; return; }
+    $('#hall-err').textContent = '';
     const jeu = $('#creer-jeu').value || 'roulette';
     rejoindreTable(c, jeu); };
   $('#b-quitter').onclick = ()=>{ Audio_.play('click'); quitterTable(); };
+  // inviter : le lien ouvre directement la bonne table chez l'ami
+  $('#b-partager').onclick = async ()=>{ Audio_.play('click'); if(!S.code) return;
+    const url = location.href.split('#')[0].split('?')[0]+'?table='+S.code;
+    const txt = 'Rejoins ma table de '+(JEUX[S.jeu]||{nom:''}).nom.toLowerCase()+' : code '+S.code;
+    try{ if(navigator.share){ await navigator.share({title:'Trading', text:txt, url}); return; } }catch(e){ return; }
+    try{ await navigator.clipboard.writeText(txt+' '+url); msgTable('Lien copié, colle-le à tes amis.'); }
+    catch(e){ msgTable('Code de la table : '+S.code); }
+  };
+  // la page revient du cache arrière (retour en arrière) : on repart proprement
+  window.addEventListener('pageshow', e=>{ if(e.persisted) location.reload(); });
   $('#b-pret').onclick = ()=>{
     const m = moiDansTable();
     Audio_.play('click'); seDeclarerPret(!(m && m.pret));
@@ -227,10 +250,19 @@ function peindreTable(){
       ch.value='';
     }
   };
-  window.addEventListener('beforeunload', ()=>{
-    try{ avantQuitter(); }catch(e){}
-    if(S.canal) S.canal.quitter(); });
+  // iPhone ne déclenche pas toujours beforeunload : pagehide couvre les deux
+  const partir = ()=>{ try{ avantQuitter(); }catch(e){} if(S.canal) S.canal.quitter(); };
+  window.addEventListener('pagehide', partir);
+  window.addEventListener('beforeunload', partir);
 
+  // arrivée par un lien d'invitation : on rejoint cette table
+  const invit = (new URLSearchParams(location.search).get('table')||'').toUpperCase();
+  if(/^[A-Z0-9]{4}$/.test(invit)){
+    history.replaceState(null,'',location.pathname);
+    // on laisse une seconde au hall pour savoir à quel jeu joue la table
+    setTimeout(()=>rejoindreTable(invit, 'roulette'), 1200);
+    return;
+  }
   // on reprend la table quittée par accident (rechargement, écran verrouillé)
   try{
     const der = JSON.parse(localStorage.getItem('cyc_table')||'null');

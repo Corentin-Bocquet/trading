@@ -34,7 +34,49 @@ function difficulte(key){
   return Math.round(clamp(v/32, .8, 1.8)*100)/100;
 }
 
-async function startSession(forcedId){
+/* ---------- partie en cours : sauvegardée à chaque manche ---------- */
+function sauverPartie(){
+  if(!G.sc || G.done) return;
+  try{
+    localStorage.setItem('cyc_partie', JSON.stringify({
+      uid:localStorage.getItem('cyc_uid'), id:G.sc.id, end:G.sc.end, decs:G.decs, round:G.round,
+      cash:G.cash, units:G.units, cost:G.cost, totSpent:G.totSpent, totUnits:G.totUnits,
+      capital:G.capital, horsJeu:G.horsJeu, actions:G.actions, marche:G.marche, defi:G.defi||null,
+      t:Date.now()}));
+  }catch(e){}
+}
+function partieEnCours(){
+  try{
+    const p = JSON.parse(localStorage.getItem('cyc_partie')||'null');
+    if(!p || !p.id || !Array.isArray(p.decs)) return null;
+    if(p.uid && p.uid !== localStorage.getItem('cyc_uid')) return null;
+    if(!CATALOGUE.scenarios.find(s=>s.id===p.id)) return null;
+    return p;
+  }catch(e){ return null; }
+}
+function oublierPartie(){ try{ localStorage.removeItem('cyc_partie'); }catch(e){} }
+
+async function reprendrePartie(p){
+  const sc0 = CATALOGUE.scenarios.find(s=>s.id===p.id);
+  show('s-game');
+  $('#t-marche').textContent = NOM_MARCHE(p.marche);
+  $('#t-round').textContent = 'CHARGEMENT…';
+  try{ G.ser = await chargerSerie(sc0.a); }
+  catch(e){ $('#t-round').textContent = 'DONNÉES INDISPONIBLES'; return; }
+  G.sc = Object.assign({}, sc0, {end:p.end||sc0.end});
+  G.decs = p.decs; G.base = G.ser.ohlc[G.decs[0]][3];
+  G.round = clamp(p.round|0, 0, G.decs.length-1);
+  Object.assign(G, {cash:p.cash, units:p.units, cost:p.cost, totSpent:p.totSpent,
+    totUnits:p.totUnits, capital:p.capital, horsJeu:p.horsJeu||0, actions:p.actions||[]});
+  G.done = false; G.revealPrices = false; G.showMA = false;
+  G.defi = p.defi || null;
+  if(G.defi) $('#t-marche').textContent = 'DÉFI DU JOUR';
+  applyMode(); modeRevue(false);
+  setupRound();
+}
+
+async function startSession(forcedId, defi){
+  G.defi = defi || null;
   const pool = scenariosDuMarche(G.marche);
   let sc;
   if(forcedId) sc = CATALOGUE.scenarios.find(s=>s.id===forcedId);
@@ -46,12 +88,14 @@ async function startSession(forcedId){
   localStorage.setItem('cyc_last', sc.id);
 
   show('s-game');
+  $('#t-marche').textContent = G.defi ? 'DÉFI DU JOUR' : NOM_MARCHE(G.marche);
   $('#t-round').textContent = 'CHARGEMENT…';
   try{ G.ser = await chargerSerie(sc.a); }
   catch(e){ $('#t-round').textContent = 'DONNÉES INDISPONIBLES'; return; }
 
   G.sc = sc;
-  G.decs = construireManches(sc, clamp(Math.round(G.reglages.manches||10), 5, 25));
+  // le défi se joue pour tout le monde en 10 manches, pour que les notes se comparent
+  G.decs = construireManches(sc, G.defi ? 10 : clamp(Math.round(G.reglages.manches||10), 5, 25));
   G.base = G.ser.ohlc[G.decs[0]][3];
   const total = Math.max(SEUIL_RUINE, G.prof.cash || CAPITAL_DEPART);
   const part = clamp(G.reglages.part||1, 0.05, 1);
@@ -60,7 +104,7 @@ async function startSession(forcedId){
   G.round = 0; G.cash = G.capital; G.units = 0; G.cost = 0;
   G.totSpent = 0; G.totUnits = 0;
   G.actions = []; G.done = false; G.revealPrices = false; G.showMA = false;
-  applyMode();
+  applyMode(); modeRevue(false);
   setupRound();
 }
 
@@ -77,6 +121,7 @@ function setupRound(){
   G.maxSpanSeen = G.view.span;
   $('#t-round').textContent = 'MANCHE '+(G.round+1)+' / '+G.decs.length;
   updateGate(); updateHUD(); Chart.resize(); Chart.draw(); resetCard();
+  sauverPartie();
   Audio_.play('whoosh');
 }
 
@@ -97,7 +142,7 @@ function updateHUD(){
   const nb = G.actions.filter(a=>a.type==='buy').length;
   $('#m-cash').textContent  = dollars(G.cash);
   $('#m-place').textContent = dollars(G.units*p);
-  $('#m-bar').style.width   = clamp(G.cash/valeur*100, 0, 100)+'%';
+  $('#m-bar').style.width   = (valeur>0 ? clamp(G.cash/valeur*100, 0, 100) : 0)+'%';
   $('#m-pal').textContent   = nb;
   $('#t-dots').innerHTML = G.decs.map((_,i)=>
     `<i class="${i<G.round?'done':(i===G.round?'now':'')}"></i>`).join('');
@@ -302,8 +347,10 @@ function refusDezoom(){
 
 /* ---------- exécution d'une décision ---------- */
 function doAction(type, v){
+  // aucune décision possible pendant l'animation, la prolongation ou le bilan
+  if(G.done || G.revealing || G.pause || G.round >= G.decs.length) return;
   const i = G.decIdx, p = priceAt(i);
-  let A = {type, i, price:p, pct:v, pctCap:0, date:G.ser.dates[i]};
+  let A = {type, i, price:p, pct:v, pctCap:0, date:G.ser.dates[i], recul:G.maxSpanSeen};
   if(type==='buy'){
     const eur = G.cash*v;
     G.cash -= eur; G.units += eur/p; G.cost += eur;
@@ -322,7 +369,7 @@ function doAction(type, v){
     Audio_.play('swipe');
   }
   G.actions.push(A);
-  setTimeout(()=>Audio_.play(A.g.k==='exc'?'win':A.g.k==='bad'?'fail':'ok'), 160);
+  if(A.g.k==='exc' || A.g.k==='bad') setTimeout(()=>Audio_.play(A.g.k==='exc'?'win':'fail'), 160);
   if(G.mode==='simple') flash(A.g.k); else toast(A.g.k, A.g.t);
   updateHUD();
   revealNext();
@@ -372,7 +419,7 @@ function prolonger(n){
     if(i <= G.ser.ohlc.length-1) G.decs.push(i);
   }
   G.sc = Object.assign({}, G.sc, {end: Math.min(G.ser.ohlc.length-1, depart + n*pas)});
-  $('#prolonge').classList.remove('on');
+  $('#prolonge').classList.remove('on'); G.pause = false;
   setupRound();
 }
 function proposerProlongation(n, possible){
@@ -386,9 +433,9 @@ function proposerProlongation(n, possible){
     Rien n'est inventé.</p>
     <button class="btn" id="p-plus">CONTINUER — ${n} MANCHE${n>1?'S':''} DE PLUS</button>
     <button class="btn ghost" id="p-stop">M'ARRÊTER LÀ ET VOIR LE BILAN</button>`;
-  el.classList.add('on');
+  el.classList.add('on'); G.pause = true;
   $('#p-plus').onclick = ()=>{ Audio_.play('click'); prolonger(n); };
-  $('#p-stop').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); endSession(); };
+  $('#p-stop').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); G.pause = false; endSession(); };
 }
 
 /* ============================================================
@@ -396,6 +443,7 @@ function proposerProlongation(n, possible){
    ============================================================ */
 function endSession(){
   G.done = true; G.revealPrices = true; G.showMA = true;
+  oublierPartie();
   const sc=G.sc, ser=G.ser, last = priceAt(sc.end);
   const buys = G.actions.filter(a=>a.type==='buy'), sells = G.actions.filter(a=>a.type==='sell');
   const pru = G.totUnits ? G.totSpent/G.totUnits : null;
@@ -440,13 +488,29 @@ function endSession(){
   G.prof.best = Math.max(G.prof.best, Math.round(score*10)/10);
   const monte = G.prof.level > avantNiv;
 
+  // de quoi nourrir « Tes stats » : où tombent les achats, le recul pris, le marché
+  const zb = [0,0,0,0], K = {exc:0,cor:1,tie:2,bad:3};
+  buys.forEach(a=>{ zb[K[a.g.k]]++; });
+  const recul = G.actions.length
+    ? Math.round(G.actions.reduce((t,a)=>t+(a.recul||0),0)/G.actions.length/52*10)/10 : null;
+  const cat = G.defi ? 'defi' : (G.marche && G.marche.cat) || 'tout';
   const rec = {t:Date.now(), id:sc.id, a:sc.a, score, zPru, bons, xp:xpGain,
-               n:G.actions.length, cash:G.prof.cash, gain:Math.round(gainCycle), ruine};
+               n:G.actions.length, b:buys.length, zb, recul, cat, defi:G.defi||null,
+               cash:G.prof.cash, gain:Math.round(gainCycle), ruine};
+  if(G.defi){ try{ localStorage.setItem('cyc_defi', G.defi); }catch(e){} }
   G.hist.push(rec); saveLocal();
-  Cloud.saveSession(rec, {score, zPru, bonus, valeur, bh, buys:buys.length, diff});
+  Cloud.saveSession(rec, {score, zPru, bonus, valeur, bh, buys:buys.length, diff, zb, recul, cat});
 
   renderResult({sc,ser,last,buys,sells,pru,zPru,score,bonus,valeur:enJeu,bh,xpGain,bons,
                 avant,gainCycle,ruine,diff,horsJeu:G.horsJeu||0});
   show('s-result');
   if(monte) setTimeout(()=>levelUpAnim(G.prof.level), 700);
+}
+
+/* ---------- revoir le graphique complet après le bilan ---------- */
+function modeRevue(on){
+  const c=$('#card'), h=$('.deck .hints'), b=$('#b-bilan');
+  if(c) c.style.display = on ? 'none' : '';
+  if(h) h.style.display = on ? 'none' : '';
+  if(b) b.style.display = on ? '' : 'none';
 }

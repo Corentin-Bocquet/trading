@@ -10,38 +10,49 @@
 <meta name="apple-mobile-web-app-title" content="Trading">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png?v=2">
-<link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png?v=2">
-<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png?v=2">
 <link rel="icon" href="assets/icons/favicon.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
-<title>Trading · Connexion</title>
+<title>Trading &middot; Défi du jour</title>
 </head>
 <body>
 <div id="app">
-<section class="page">
-  <a class="back" href="index.html">← RETOUR</a>
-  <div class="brand">
-    <div class="mark"><img src="assets/icons/logo.png" alt=""></div>
-    <div><div class="nm">Connexion</div><div class="sb">TON COMPTE TRADING</div></div>
+<section class="page avec-nav">
+  <div class="phead">
+    <a class="back" href="index.html" style="margin:0">← ACCUEIL</a>
+    <div style="flex:1"></div>
+    <span class="compte" id="d-fin">--:--:--</span>
   </div>
-  <p class="lead">Retrouve ton niveau, ton XP, ton historique de scores et ta place au classement,
-  sur tous tes appareils.</p>
-  <div id="authform" data-mode="login">
-    <input class="inp" id="i-mail" type="email" autocomplete="email" inputmode="email" placeholder="Email">
-    <input class="inp" id="i-pass" type="password" autocomplete="current-password" placeholder="Mot de passe">
-    <div class="err" id="err"></div><div class="ok" id="okmsg"></div>
-    <button class="btn" id="submit">Se connecter</button>
+
+  <div class="defitete">
+    <u>DÉFI DU JOUR</u>
+    <h1>Le même cycle pour tout le monde. Un seul essai.</h1>
+    <p class="note">Classement sur la note de méthode, pas sur la chance : acheter dans la bonne zone
+    et fractionner. L'actif est révélé demain, ici même.</p>
   </div>
-  <div class="linkrow"><a href="signup.html">Créer un compte</a><a href="#" id="b-oubli">Mot de passe oublié ?</a></div>
+
+  <div class="carte-defi">
+    <canvas id="d-apercu" style="width:100%;height:120px;display:block"></canvas>
+    <div class="kvl"><span>10 manches · ta part engagée habituelle</span><span id="d-nb">&nbsp;</span></div>
+  </div>
+  <div id="d-action"></div>
+
+  <h2>Classement du jour</h2>
+  <div id="d-lb"><p class="note">Chargement…</p></div>
+
+  <h2 id="d-hier-t">Hier</h2>
+  <div id="d-hier"><p class="note">Chargement…</p></div>
   <div class="grow"></div>
 </section>
+<nav class="tabbar" data-on="accueil"></nav>
 </div>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/audio.js"></script>
+<script src="assets/data/catalogue.js"></script>
 <script src="assets/js/score.js"></script>
 <script src="assets/js/cloud.js"></script>
-<script src="assets/js/auth.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/defi.js"></script>
 </body></html>

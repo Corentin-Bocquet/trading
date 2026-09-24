@@ -39,3 +39,4 @@
 .tmsg{text-align:center;font-size:13px;color:var(--gold2);min-height:18px;
   opacity:0;transition:opacity .18s}
 .tmsg.on{opacity:1}
+.lien{white-space:nowrap}

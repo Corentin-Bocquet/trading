@@ -33,10 +33,11 @@ function missionBar(){
 const SPARK='<svg width="13" height="13" viewBox="0 0 24 24" style="flex:0 0 auto"><path d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0z" fill="currentColor"/></svg>';
 const AVCOL=['#e0648a','#5b8def','#3fbf8f','#8b5cf6','#f59e0b','#ef4444'];
 function avatar(nom, photo){
+  photo = photoSure(photo);
   if(photo) return `<div class="av photo" style="background-image:url('${photo}')"></div>`;
   let h=0; for(const c of (nom||'?')) h=(h*31+c.charCodeAt(0))|0;
   const col=AVCOL[Math.abs(h)%AVCOL.length];
-  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${(nom||'?')[0].toUpperCase()}</div>`;
+  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${esc([...(nom||'?')][0].toUpperCase())}</div>`;
 }
 
 const MESURES = {
@@ -120,24 +121,24 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
   mesure = MESURES[mesure] ? mesure : 'argent';
   const M = MESURES[mesure], jeu = M.jeu;
   const tri = list.slice().sort(M.tri);
-  const estMoi = u => moi && u.pseudo===moi.pseudo && u.xp===moi.xp;
+  const estMoi = u => moi && (u.id && moi.id ? u.id===moi.id : (u.pseudo===moi.pseudo && u.xp===moi.xp));
   const badges = u => badgeRuines(u,jeu) + badgeSerie(u);
 
   const pill = (u,i)=>`
-    <div class="lbrow r${i+1}${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
+    <div class="lbrow r${i+1}${estMoi(u)?' me':''}" data-i="${list.indexOf(u)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badges(u)}</div>
+      <div class="nm">${esc(u.pseudo)}${badges(u)}</div>
       <div class="pt">${M.val(u)} ${SPARK}</div>
     </div>`;
   const ligne = (u,i)=>`
-    <div class="lbline${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
+    <div class="lbline${estMoi(u)?' me':''}" data-i="${list.indexOf(u)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badges(u)}</div>
+      <div class="nm">${esc(u.pseudo)}${badges(u)}</div>
       <div class="pt">${M.val(u)}</div>
     </div>`;
 
   const corps = tout
-    ? `<div class="lblist">${tri.slice(0,20).map(ligne).join('')}</div>`
+    ? `<div class="lblist">${tri.slice(0,50).map(ligne).join('')}</div>`
     : `<div class="lbwrap"><div class="lbstack">${tri.slice(0,5).map(pill).join('')}</div></div>`;
 
   const monRang = tri.findIndex(estMoi)+1;
@@ -153,20 +154,19 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
   const dem = demo?expl('Classement de démonstration. Crée un compte pour être classé face aux vrais joueurs.'):'';
   return jeux + onglets + corps + rank + bouton
        + expl(M.phrase + ' Appuie sur un joueur pour voir sa fiche.')
-       + expl('Le badge <b>SÉRIE</b> est le nombre de jours d’affilée où le joueur est venu jouer, au trading ou à la roulette.')
+       + expl('Le badge <b>SÉRIE</b> est le nombre de jours d’affilée où le joueur est venu jouer, à n’importe lequel des quatre jeux.')
        + dem;
 }
 
 /* --- fiche d'un joueur, ouverte depuis le classement --- */
-async function ouvrirFiche(pseudo, liste){
-  const u = (liste||[]).find(x=>x.pseudo===pseudo);
+async function ouvrirFiche(u){
   if(!u) return;
   const el = $('#fiche'); if(!el) return;
   const prec = precisionDe(u);
   el.innerHTML = `<div class="inner">
     <div class="phead">
       ${avatar(u.pseudo,u.avatar).replace('class="av"','class="av gros"').replace('class="av photo"','class="av photo gros"')}
-      <div class="pinfo"><div class="prow"><span>${u.pseudo}</span></div>
+      <div class="pinfo"><div class="prow"><span>${esc(u.pseudo)}</span></div>
         <div class="note">niveau ${u.level||1} · ${fmt(u.xp||0)} XP${u.streak?` · série ${u.streak} j`:''}</div></div>
       <button class="wordbtn sm" id="f-close">FERMER</button>
     </div>
@@ -186,18 +186,18 @@ async function ouvrirFiche(pseudo, liste){
   el.classList.add('on');
   $('#f-close').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); };
 
-  const h = await Cloud.sessionsDe(pseudo);
+  const h = await Cloud.sessionsDe(u.id);
   courbeArgent('f-courbe', h);
   $('#f-hist').innerHTML = h.slice().reverse().slice(0,12).map(x=>`
-    <div class="kv"><span>${nomActif(x.a)}
+    <div class="kv"><span>${esc(nomActif(x.a))}
       <span style="color:var(--dim)">· ${new Date(x.t).toLocaleDateString('fr-FR')}</span></span>
     <b style="color:${x.gain>=0?'#5fe8b6':'#ff9098'}">${x.gain>=0?'+':'−'}$${fmt(Math.abs(x.gain))}</b></div>`
   ).join('') || '<p class="note">Aucun cycle enregistré.</p>';
 }
 
 function brancherLignes(liste){
-  $$('.lbrow[data-p],.lbline[data-p]').forEach(r=>{
-    r.onclick = ()=>{ Audio_.play('click'); ouvrirFiche(decodeURIComponent(r.dataset.p), liste); };
+  $$('.lbrow[data-i],.lbline[data-i]').forEach(r=>{
+    r.onclick = ()=>{ Audio_.play('click'); ouvrirFiche(liste[+r.dataset.i]); };
   });
 }
 
@@ -300,8 +300,10 @@ function brancherBilan(sc){
     if(typeof peindreSetup==='function') peindreSetup();
     show('s-setup'); };
   $('#b-seechart').onclick = ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
-    G.endVisible = sc.end; show('s-game'); Chart.resize(); Chart.draw(); };
-  $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
+    G.endVisible = sc.end; G.decIdx = sc.end; modeRevue(true);
+    show('s-game'); Chart.resize(); Chart.draw(); updateGate(); };
+  $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go(G.defi ? 'defi.html' : 'profil.html#classement'); };
+  if(G.defi) $('#b-prof').textContent = 'CLASSEMENT DU DÉFI';
 }
 
 /* ============================================================
@@ -393,4 +395,75 @@ function renderResult(R){
     <button class="btn ghost" id="b-seechart">VOIR LE GRAPHIQUE COMPLET</button>
     <button class="btn ghost" id="b-prof">CLASSEMENT ET PROGRESSION</button>`;
   brancherBilan(sc);
+}
+
+/* ============================================================
+   TES STATS : ce que ton historique dit de ta méthode
+   ============================================================ */
+function rendreStats(hist){
+  const H = (hist||[]).filter(h=>h && h.score!=null);
+  if(!H.length) return '<p class="note">Joue un premier cycle de trading pour voir tes stats.</p>';
+  const moy = a => a.length ? a.reduce((t,v)=>t+v,0)/a.length : null;
+  const virg = (v,d=1) => v==null ? '-' : String(Math.round(v*10**d)/10**d).replace('.',',');
+  const avecB = H.filter(h=>h.b!=null), avecR = H.filter(h=>h.recul!=null);
+  const pal = moy(avecB.map(h=>h.b)), recul = moy(avecR.map(h=>h.recul));
+  const note = moy(H.slice(-20).map(h=>h.score));
+
+  // où tombent les achats dans le cycle
+  const zb = [0,0,0,0]; H.forEach(h=>{ if(Array.isArray(h.zb)) h.zb.forEach((n,i)=>zb[i]+=n||0); });
+  const tot = zb.reduce((a,b)=>a+b,0);
+  const NOMS = ['zone basse','moitié basse','tiède','près du sommet'], COUL = ['#16c784','#f5a524','#868d9a','#ea3943'];
+  const barres = tot ? `<div class="zbars">${zb.map((n,i)=>{ const p=n/tot*100;
+      return `<div><span>${Math.round(p)} %</span><i style="height:${Math.max(4,p*0.9)}px;background:${COUL[i]}"></i><u>${NOMS[i]}</u></div>`; }).join('')}</div>`
+    : '<p class="note">La répartition apparaîtra après ton prochain cycle joué.</p>';
+
+  // meilleur marché : note moyenne par type de marché, deux cycles minimum
+  const parCat = {}; H.forEach(h=>{ if(h.cat && h.cat!=='defi') (parCat[h.cat]=parCat[h.cat]||[]).push(h.score); });
+  const cats = Object.entries(parCat).filter(([,v])=>v.length>=2).map(([k,v])=>[k,moy(v)]).sort((a,b)=>b[1]-a[1]);
+  const nomCat = k => (MARCHES.find(m=>m.k===k)||{nom:k.toUpperCase()}).nom;
+
+  // tendance : les 5 derniers cycles contre les 5 d'avant
+  const r5 = moy(H.slice(-5).map(h=>h.score)), p5 = moy(H.slice(-10,-5).map(h=>h.score));
+  const tendance = H.length<6 ? 'encore trop peu de cycles pour une tendance'
+    : r5 > p5+1 ? '<b class="pos">en progrès</b> sur tes 5 derniers cycles'
+    : r5 < p5-1 ? '<b class="neg">en baisse</b> sur tes 5 derniers cycles' : 'stable sur tes 5 derniers cycles';
+
+  // l'angle mort : le conseil le plus utile, un seul
+  let angle;
+  if(tot && zb[3]/tot >= 0.15) angle = `${Math.round(zb[3]/tot*100)} % de tes achats se font près du sommet. Dézoome davantage avant d’acheter : c’est là que la douleur commence.`;
+  else if(pal!=null && pal < 3) angle = `Tu poses ${virg(pal)} palier${pal>=2?'s':''} par cycle en moyenne. Vise 4 ou plus : fractionner est ce qui protège quand tu te trompes de zone.`;
+  else if(recul!=null && recul < 3) angle = `Tu décides avec ${virg(recul)} an${recul>=2?'s':''} de recul en moyenne. Dézoome à 5 ans ou plus : le cycle précédent donne la vraie échelle.`;
+  else if(tot && zb[0]/tot >= 0.3) angle = `${Math.round(zb[0]/tot*100)} % de tes achats tombent dans la zone basse. C’est exactement la méthode : continue.`;
+  else angle = 'Rien de flagrant : garde tes paliers réguliers et ton recul, c’est ce qui paie sur vingt cycles.';
+
+  return `
+    <div class="statgrid">
+      <div><u>NOTE MOYENNE</u><b>${note>0?'+':''}${virg(note)}</b></div>
+      <div><u>PALIERS / CYCLE</u><b>${virg(pal)}</b></div>
+      <div><u>RECUL MOYEN</u><b>${recul!=null?virg(recul)+' an'+(recul>=2?'s':''):'-'}</b></div>
+    </div>
+    <div class="carte-stat"><u>OÙ TU ACHÈTES DANS LE CYCLE</u>${barres}</div>
+    <div class="carte-stat"><u>TA NOTE DE MÉTHODE, CYCLE APRÈS CYCLE</u>
+      <canvas id="st-notes" style="width:100%;height:90px;display:block"></canvas>
+      <span class="note">Tendance : ${tendance}${cats.length?` · meilleur marché : <b>${esc(nomCat(cats[0][0]))}</b>`:''}</span></div>
+    <div class="angle"><b>Ton angle mort :</b> ${angle}</div>`;
+}
+function dessinerNotes(hist){
+  setTimeout(()=>{
+    const c = document.getElementById('st-notes'); if(!c) return;
+    const d = (hist||[]).filter(h=>h.score!=null).slice(-20).map(h=>h.score);
+    const r = c.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1,2.5);
+    c.width = r.width*dpr; c.height = r.height*dpr;
+    const x = c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+    const W=r.width, H=r.height;
+    if(d.length<2){ x.fillStyle='#5b626e'; x.font='12px sans-serif'; x.textAlign='center';
+      x.fillText('Deux cycles minimum pour tracer la courbe', W/2, H/2); return; }
+    const lo=Math.min(0,...d), hi=Math.max(1,...d);
+    const px=i=>6+i*(W-12)/(d.length-1), py=v=>H-8-(v-lo)/((hi-lo)||1)*(H-16);
+    x.strokeStyle='#2a2f39'; x.setLineDash([4,4]); x.beginPath(); x.moveTo(0,py(0)); x.lineTo(W,py(0)); x.stroke(); x.setLineDash([]);
+    x.strokeStyle='#f5a524'; x.lineWidth=2; x.beginPath();
+    d.forEach((v,i)=> i? x.lineTo(px(i),py(v)) : x.moveTo(px(i),py(v))); x.stroke();
+    d.forEach((v,i)=>{ x.fillStyle = v>=5?'#16c784':v>=0?'#f5a524':'#ea3943';
+      x.beginPath(); x.arc(px(i),py(v),3,0,7); x.fill(); });
+  },30);
 }

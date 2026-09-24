@@ -11,14 +11,17 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png?v=2">
 <link rel="icon" href="assets/icons/favicon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
 <title>Trading &middot; Mon compte</title>
 </head>
 <body>
 <div id="app">
-<section class="page">
+<section class="page avec-nav">
 
-  <div class="phead">
+  <div class="phead" id="haut">
     <button class="bigav" id="p-av" aria-label="Changer la photo"><span id="p-avin"></span></button>
     <div class="pinfo">
       <div class="prow"><span id="p-nom">Toi</span></div>
@@ -28,14 +31,7 @@
   </div>
 
   <div class="walletbig" id="p-wallet"></div>
-  <div class="walletbig" id="p-wallet-rl"></div>
-
-  <div class="swrow"><div class="modesw" id="modesw">
-    <b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b>
-  </div></div>
-
-  <a class="btn" href="app.html" id="b-play">JOUER</a>
-  <a class="btn ghost" href="index.html">FERMER ET REVENIR À L'ACCUEIL</a>
+  <div class="caisses" id="p-caisses"></div>
 
   <div id="p-edit" class="editbox">
     <input class="inp" id="e-pseudo" maxlength="18" placeholder="Ton pseudo">
@@ -53,7 +49,10 @@
 
   <div id="p-mission"></div>
 
-  <h2>Classement</h2>
+  <h2>Tes stats de trading</h2>
+  <div id="p-stats"></div>
+
+  <h2 id="classement">Classement</h2>
   <div id="p-lb"><p class="note">Chargement&hellip;</p></div>
 
   <h2>Ton argent dans le temps</h2>
@@ -62,6 +61,17 @@
   10&nbsp;000&nbsp;$. Un point rouge veut dire que tu avais tout perdu.</p>
 
   <h2>Réglages</h2>
+  <div class="kv">
+    <span>Affichage
+      <span class="note" style="display:block;margin-top:3px">SIMPLE montre des mots et des gestes,
+      PRO les chiffres et le détail. Même progression.</span>
+    </span>
+    <div class="modesw" id="modesw"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
+  </div>
+  <div class="kv">
+    <span>Effets sonores</span>
+    <button class="sw" id="s-son" role="switch" aria-checked="true"><i></i></button>
+  </div>
   <div class="kv">
     <span>Obliger à dézoomer avant de décider
       <span class="note" style="display:block;margin-top:3px">Bloque la décision tant que tu n'as pas
@@ -83,6 +93,7 @@
   <button class="btn ghost" id="b-out" style="margin-top:22px">SE DÉCONNECTER</button>
   <div class="grow"></div>
 </section>
+<nav class="tabbar" data-on="compte"></nav>
 <div class="fiche" id="fiche"></div>
 </div>
 <script src="assets/js/core.js"></script>

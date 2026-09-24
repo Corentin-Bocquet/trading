@@ -1,39 +1,38 @@
 /* ============================================================
    BOOT de l'accueil (index.html)
-   Connexion obligatoire, puis choix du marché.
+   Les quatre jeux au centre, le compte en haut, la navigation en bas.
+   Le choix du marché de trading vit maintenant sur l'écran de
+   réglages du trading, là où il sert.
    ============================================================ */
 (async function bootHome(){
   const box = $('#authbox');
   wireModeSwitch();
-  rendreMarches();
+
+  // l'aide à l'installation ne sert à rien une fois l'app installée
+  const installee = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  if(installee && $('#a2hs')) $('#a2hs').style.display = 'none';
 
   /* ---------- compte ---------- */
   function connecte(){
-    const g = gainDe(G.prof);
+    const s = G.prof.streak||0;
+    const attente = Cloud.enAttente();
     box.innerHTML = `
-      <div class="walletbig" style="margin-bottom:14px">
-        <u>TON PORTEFEUILLE</u>
-        <b>${dollars(G.prof.cash)}</b>
-        <i style="color:${g>=0?'#5fe8b6':'#ff9098'}">${g>=0?'+':'−'}$${fmt(Math.abs(g))} depuis le début${
-          G.prof.ruines? ' · '+G.prof.ruines+' ruine'+(G.prof.ruines>1?'s':'') : ''}</i>
-      </div>
-      <button class="btn" id="b-go">JOUER — ${G.prof.pseudo}</button>
-      <a class="btn ghost" href="profil.html">MON COMPTE ET LE CLASSEMENT</a>`;
-    $('#b-go').onclick = ()=>{ Audio_.play('click'); go('app.html'); };
+      <a class="salut" href="profil.html">
+        ${avatar(G.prof.pseudo, G.prof.avatar)}
+        <div class="pinfo"><b>Salut ${esc(G.prof.pseudo)}</b>
+          <span class="note">niveau ${G.prof.level} · ${fmt(G.prof.xp)} XP${s>=1?` · série ${s} jour${s>1?'s':''}`:''}</span></div>
+        <span class="lvl-badge">${G.prof.level}</span>
+      </a>
+      ${G.offline ? `<p class="expl"><b>Hors connexion.</b> Tu peux jouer : la progression est gardée
+        sur ce téléphone et partira vers le serveur au retour du réseau.</p>`
+        : attente ? '<p class="note" style="text-align:center">Synchronisation en cours…</p>' : ''}`;
   }
   function deconnecte(){
     box.innerHTML = `
+      <p class="expl">Un compte garde ton argent, ton niveau et ta place au classement,
+      sur tous tes appareils. <b>30 secondes, pas plus.</b></p>
       <a class="btn" href="signup.html">CRÉER UN COMPTE</a>
-      <a class="btn ghost" href="login.html">J'AI DÉJÀ UN COMPTE</a>
-      <p class="expl">Un compte est nécessaire pour jouer : il garde ton portefeuille,
-      ton niveau et ta place au classement.</p>`;
-  }
-  function horsLigneConnu(){
-    box.innerHTML = `
-      <button class="btn" id="b-go2">JOUER HORS CONNEXION</button>
-      <p class="expl">Serveur injoignable. Tu peux jouer, la progression est gardée dans ce navigateur
-      et repartira vers le serveur au retour du réseau.</p>`;
-    $('#b-go2').onclick = ()=>{ Audio_.play('click'); G.offline=true; go('app.html'); };
+      <a class="btn ghost" href="login.html">J'AI DÉJÀ UN COMPTE</a>`;
   }
   function horsLigneInconnu(){
     box.innerHTML = `<p class="expl">Serveur injoignable pour l'instant, impossible de créer un compte.
@@ -42,66 +41,67 @@
     $('#b-retry').onclick = ()=>location.reload();
   }
 
-  /* ---------- choix du marché ---------- */
-  function rendreMarches(){
-    const m = G.marche || {cat:'tout'};
-    const btn = (k,nom,on) => `<button class="mbtn${on?' on':''}" data-k="${k}">${nom}</button>`;
-    let html = `<h2>Sur quoi tu joues</h2>
-      <div class="mgrid">${MARCHES.map(x=>btn(x.k,x.nom,m.cat===x.k)).join('')}</div>`;
+  /* ---------- la carte principale : reprendre ou lancer un cycle ---------- */
+  function peindreHero(enCours, p){
+    const h = G.hist.filter(x=>x.cash!=null).slice(-20);
+    const g = gainDe(G.prof);
+    $('#hero-cash').textContent = dollars(G.prof.cash);
+    const pc = g/(CAPITAL_DEPART*(1+(G.prof.ruines||0)))*100;
+    $('#hero-var').textContent = (g>=0?'+':'−')+Math.abs(pc).toFixed(1).replace('.',',')+' %';
+    $('#hero-var').className = g>=0 ? 'pos' : 'neg';
+    $('#hero-lab').textContent = enCours
+      ? (p.defi ? 'DÉFI EN COURS' : 'REPRENDRE') + ' · MANCHE '+Math.min(p.round+1,p.decs.length)+' SUR '+p.decs.length
+      : 'TON PORTEFEUILLE DE TRADING';
+    $('#hero-cta').textContent = enCours ? 'REPRENDRE LA PARTIE' : 'LIRE UN CYCLE';
+    const c = $('#hero-courbe'), r = c.getBoundingClientRect(), dpr = Math.min(devicePixelRatio||1,2.5);
+    c.width = r.width*dpr; c.height = r.height*dpr;
+    const x = c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+    const v = [CAPITAL_DEPART, ...h.map(e=>e.cash)];
+    if(v.length<2){ x.strokeStyle='#2a2f39'; x.setLineDash([4,4]);
+      x.beginPath(); x.moveTo(0,r.height/2); x.lineTo(r.width,r.height/2); x.stroke(); return; }
+    const lo=Math.min(...v), hi=Math.max(...v), W=r.width, H=r.height;
+    const px=i=>i*W/(v.length-1), py=e=>H-4-(e-lo)/((hi-lo)||1)*(H-8);
+    const gr = x.createLinearGradient(0,0,0,H); gr.addColorStop(0,'rgba(245,165,36,.28)'); gr.addColorStop(1,'rgba(245,165,36,0)');
+    x.beginPath(); v.forEach((e,i)=> i? x.lineTo(px(i),py(e)) : x.moveTo(0,py(e)));
+    x.lineTo(W,H); x.lineTo(0,H); x.closePath(); x.fillStyle=gr; x.fill();
+    x.beginPath(); v.forEach((e,i)=> i? x.lineTo(px(i),py(e)) : x.moveTo(0,py(e)));
+    x.strokeStyle='#f5a524'; x.lineWidth=2; x.stroke();
+  }
 
-    if(m.cat==='secteur'){
-      html += `<div class="mgrid sub">${SECTEURS.map(s=>btn('sec:'+s.k,s.nom,m.sous===s.k)).join('')}</div>`;
-    }
-    if(m.cat==='entreprise'){
-      const noms = Object.keys(CATALOGUE.assets)
-        .filter(k=>CATALOGUE.assets[k].cat.includes('entreprise'))
-        .sort((a,b)=>nomActif(a).localeCompare(nomActif(b)));
-      html += `<input class="inp" id="q-ent" placeholder="Chercher une entreprise" style="margin-top:10px">
-        <div class="mgrid sub" id="entlist">
-          ${btn('ent:', 'AU HASARD', !m.asset)}
-          ${noms.map(k=>btn('ent:'+k, nomActif(k).toUpperCase(), m.asset===k)).join('')}
-        </div>`;
-    }
-    const info = m.cat==='entreprise' && m.asset
-      ? `Tu joueras ${nomActif(m.asset)}. La période, elle, reste cachée jusqu'à la fin du cycle.`
-      : (MARCHES.find(x=>x.k===m.cat)||MARCHES[0]).phrase;
-    const nb = (typeof scenariosDuMarche==='function') ? 0 : 0;
-    html += `<div class="mnow">MARCHÉ CHOISI : <b>${NOM_MARCHE(m)}</b></div>` + expl(info);
-    $('#marchebox').innerHTML = html;
-
-    $$('#marchebox .mbtn').forEach(b=>{
-      b.onclick = ()=>{
-        Audio_.play('click');
-        const k = b.dataset.k;
-        if(k.startsWith('sec:'))      G.marche = {cat:'secteur', sous:k.slice(4)};
-        else if(k.startsWith('ent:')) G.marche = {cat:'entreprise', asset:k.slice(4)||null};
-        else if(k==='secteur')        G.marche = {cat:'secteur', sous:'tech'};
-        else if(k==='entreprise')     G.marche = {cat:'entreprise', asset:null};
-        else                          G.marche = {cat:k};
-        saveLocal(); rendreMarches();
-      };
-    });
-    const q = $('#q-ent');
-    if(q) q.oninput = ()=>{
-      const t = q.value.trim().toLowerCase();
-      $$('#entlist .mbtn').forEach(b=>{
-        b.style.display = (!t || b.textContent.toLowerCase().includes(t)) ? '' : 'none';
-      });
-    };
+  /* ---------- le bandeau : où tu en es dans chaque jeu, en un coup d'œil ---------- */
+  function peindreTicker(){
+    const der = G.hist.filter(x=>x.cash!=null).slice(-1)[0];
+    const sg = n => (n>=0?'+':'−')+fmt(Math.abs(n));
+    const cl = n => n>0?'pos':n<0?'neg':'';
+    const it = [];
+    if(der) it.push(['DERNIER CYCLE', sg(der.gain)+' $', cl(der.gain)]);
+    ['roulette','blackjack','poker'].forEach(j=>{ const g=gainJeu(G.prof,j); it.push([JEUX[j].nom, sg(g)+' €', cl(g)]); });
+    it.push(['SÉRIE', (G.prof.streak||0)+' J', 'or']);
+    $('#ticker').innerHTML = it.map(([k,v,c])=>`<span>${k} <b class="${c}">${v}</b></span>`).join('');
   }
 
   function majJeux(){
-    const t=$('#j-trading'), r=$('#j-roulette');
+    const t=$('#j-trading'), r=$('#j-roulette'), bj=$('#j-blackjack'), pk=$('#j-poker');
     if(t) t.textContent = dollars(G.prof.cash);
     if(r) r.textContent = fmt(G.prof.cashRl)+' €';
-    const bj=$('#j-blackjack'), pk=$('#j-poker');
     if(bj) bj.textContent = fmt(G.prof.cashBj)+' €';
     if(pk) pk.textContent = fmt(G.prof.cashPk)+' €';
+    let enCours = false, p = null;
+    try{ p = JSON.parse(localStorage.getItem('cyc_partie')||'null');
+      enCours = !!(p && Array.isArray(p.decs) && (!p.uid || p.uid===localStorage.getItem('cyc_uid'))); }catch(e){}
+    const pr = $('#j-reprise'); if(pr) pr.hidden = !enCours;
+    peindreHero(enCours, p); peindreTicker();
+    const dj = defiJoue();
+    $('#b-defi').classList.toggle('fait', dj);
+    $('#defi-txt').textContent = dj ? 'Défi du jour joué : vois ton rang' : 'Le cycle du jour : tout le monde joue le même';
+    if(p && enCours) $('#hero').setAttribute('href', p.defi ? 'app.html?defi=1' : 'app.html?reprendre=1');
+    // sans compte, les jeux mènent à la connexion
+    if(!G.token) $$('.jeux .jeu, #hero, #b-defi').forEach(a=>a.setAttribute('href','login.html'));
   }
   majJeux();
 
   if(G.token) connecte(); else deconnecte();
   const up = await Cloud.ping();
-  if(!up){ G.token ? horsLigneConnu() : horsLigneInconnu(); return; }
-  if(G.token){ (await Cloud.restore()) ? connecte() : deconnecte(); majJeux(); }
+  if(!up){ if(G.token){ G.offline = true; connecte(); } else horsLigneInconnu(); return; }
+  if(G.token){ (await Cloud.restore()) ? connecte() : (G.token ? connecte() : deconnecte()); majJeux(); }
 })();

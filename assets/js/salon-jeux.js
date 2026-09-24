@@ -19,7 +19,9 @@ function hoteVerifie(){
     if(!presents.has(id)){ delete S.etat.joueurs[id]; change = true; }
   }
   if(S.etat.tour && !presents.has(S.etat.tour)){ S.etat.tour = null; change = true; auto(); }
-  if(change) diffuserEtat();
+  // on rediffuse à chaque arrivée ou départ : un nouveau venu reçoit l'état
+  // tout de suite au lieu d'attendre le prochain coup pour pouvoir miser
+  diffuserEtat();
   reprendreLaMain();
 }
 
@@ -43,7 +45,10 @@ function reprendreLaMain(){
 }
 
 function etatNeuf(){
-  const base = {jeu:S.jeu, phase:'mises', joueurs:{}, tour:null, message:''};
+  // chaque manche a son identifiant : il sert à rembourser une mise que l'hôte
+  // n'aurait jamais reçue (clic trop tard, départ de l'hôte, table remise à zéro)
+  const base = {jeu:S.jeu, phase:'mises', joueurs:{}, tour:null, message:'',
+                manche: codeAleatoire()+Date.now().toString(36)};
   if(S.jeu==='roulette') return Object.assign(base, {numero:null, depart:0});
   if(S.jeu==='blackjack') return Object.assign(base, {croupier:[], cache:true, resultats:null});
   return Object.assign(base, {commune:[], pot:0, mise:0, relanceMin:10, bouton:null,
@@ -66,6 +71,8 @@ let sabotEnLigne = [];
 function actionRoulette(de, a){
   const e = S.etat;
   if(a.type==='mise' && e.phase==='mises'){
+    if(!RL_MISES[a.cle] && !/^n([0-9]|[12][0-9]|3[0-6])$/.test(a.cle)) return;
+    a.montant = Math.max(0, Math.min(25, a.montant|0)); if(!a.montant) return;
     e.joueurs[de] = e.joueurs[de] || {mises:{}, total:0};
     const j = e.joueurs[de];
     j.mises[a.cle] = (j.mises[a.cle]||0) + a.montant;
@@ -98,7 +105,8 @@ function piocheEnLigne(){
 function actionBlackjack(de, a){
   const e = S.etat;
   if(a.type==='mise' && e.phase==='mises'){
-    e.joueurs[de] = {mise:a.montant, cartes:[], finie:false};
+    const montant = Math.max(0, Math.min(100, a.montant|0)); if(!montant) return;
+    e.joueurs[de] = {mise:montant, cartes:[], finie:false};
     diffuserEtat();
     const tous = ordreJoueurs();
     const prets = tous.filter(id=>e.joueurs[id] && e.joueurs[id].mise>0);
@@ -296,9 +304,11 @@ function abattagePK(){
     const gagnants = best ? elig.filter(id=>compare(forces[id],best)===0) : elig;
     const part = Math.floor(montant/gagnants.length), reste = montant - part*gagnants.length;
     gagnants.forEach((id,k)=>{ e.joueurs[id].tapis += part + (k===0?reste:0); });
-    lignes.push(gagnants.map(pseudoDe).join(' et ')
-      + (best ? ' : '+NOM_MAIN[best[0]] : ' remporte') + ' — ' + montant + ' €');
+    const qui = gagnants.map(pseudoDe).join(' et ') + (best ? ' avec '+NOM_MAIN[best[0]].toLowerCase() : ' remporte');
+    const deja = lignes.find(l=>l.qui===qui);
+    if(deja) deja.m += montant; else lignes.push({qui, m:montant});
   });
+  lignes.forEach((l,k)=>{ lignes[k] = l.qui + ' : ' + l.m + ' €'; });
   e.pot = 0;
   e.abattage = {}; vivants.forEach(id=>{ e.abattage[id] = S.clairHote[id]||[]; });
   e.resume = lignes.join(' · ');
@@ -315,8 +325,28 @@ function abattagePK(){
 
 /* ================= APPLICATION DE L'ÉTAT CHEZ CHACUN ================= */
 let dejaRegle = '', dejaAnime = '';
+/* ce que j'ai déjà sorti de ma caisse pour la manche en cours */
+const DEBIT = {roulette:{manche:null, v:0}, blackjack:{manche:null, v:0}};
+const CAISSE = {roulette:'cashRl', blackjack:'cashBj'};
+function debiter(jeu, montant){
+  const d = DEBIT[jeu], e = S.etat; if(!e) return;
+  if(d.manche !== e.manche){ d.manche = e.manche; d.v = 0; }
+  G.prof[CAISSE[jeu]] -= montant; d.v += montant;
+  Cloud.sauver();
+}
+/* rend ce qui a été débité et que l'hôte n'a pas pris en compte */
+function rembourser(jeu, garde){
+  const d = DEBIT[jeu]; const r = d.v - (garde||0);
+  if(r > 0){ G.prof[CAISSE[jeu]] += r; msgTable(r+' € non joués te sont rendus.'); Cloud.sauver(); }
+  d.v = 0;
+}
 async function appliquerEtat(e){
   if(!e) return;
+  // la manche a changé sans que je sois réglé : mes mises reviennent dans ma caisse
+  for(const jeu of ['roulette','blackjack']){
+    const d = DEBIT[jeu];
+    if(d.manche && d.manche !== e.manche){ if(d.v>0) rembourser(jeu, 0); d.manche = e.manche; d.v = 0; }
+  }
   // l'animation est là pour le spectacle ; le règlement, lui, suit l'état
   // diffusé par l'hôte, sinon un onglet en arrière-plan ne serait jamais payé
   if(e.jeu==='roulette' && e.phase==='tourne' && dejaAnime !== e.numero+'@'+e.depart){
@@ -346,21 +376,24 @@ function reglerRoulette(e){
   const m = (e.joueurs[S.moi.id]||{}).mises || {};
   let gain = 0;
   for(const cle in m){ const g = gainMise(cle, e.numero); if(g>0) gain += m[cle]*(g+1); }
+  rembourser('roulette', (e.joueurs[S.moi.id]||{}).total||0);
   if(gain>0){ G.prof.cashRl += gain; Audio_.play('win'); Audio_.play('coin'); }
   else if(Object.keys(m).length) Audio_.play('fail');
   G.prof.toursRl = (G.prof.toursRl||0)+1;
   G.prof.spins = (G.prof.spins||[]); G.prof.spins.push(e.numero);
   if(G.prof.spins.length > 10000) G.prof.spins = G.prof.spins.slice(-10000);
   if(G.prof.cashRl < 1){ G.prof.ruinesRl=(G.prof.ruinesRl||0)+1; G.prof.cashRl = RL_DEPART; }
-  majSerie(); saveLocal(); Cloud.saveRoulette();
+  majSerie(); Cloud.sauver();
   seDeclarerPret(false);          // la caisse affichée aux autres est à jour
 }
 function reglerBlackjack(e){
   const r = e.resultats[S.moi.id];
+  const m = e.joueurs[S.moi.id];
+  rembourser('blackjack', r && m ? (m.mise||0) : 0);
   if(r){ G.prof.cashBj += r.g; G.prof.mainsBj = (G.prof.mainsBj||0)+1;
-    Audio_.play(r.net>0?'win':r.net<0?'fail':'ok');
+    Audio_.play(r.net>0?'win':r.net<0?'fail':'click');
     if(G.prof.cashBj < 5){ G.prof.ruinesBj=(G.prof.ruinesBj||0)+1; G.prof.cashBj = BJ_DEPART; }
-    majSerie(); saveLocal(); Cloud.saveJeu('blackjack'); }
+    majSerie(); Cloud.sauver(); }
   seDeclarerPret(false);
 }
 function reglerPoker(e){
@@ -368,5 +401,5 @@ function reglerPoker(e){
   if(j){ G.prof.cashPk = Math.max(0, Math.round((S.horsTable||0) + j.tapis));
     G.prof.mainsPk = (G.prof.mainsPk||0)+1;
     if(G.prof.cashPk < BLINDE){ G.prof.ruinesPk=(G.prof.ruinesPk||0)+1; G.prof.cashPk = PK_DEPART; }
-    majSerie(); saveLocal(); Cloud.saveJeu('poker'); }
+    majSerie(); Cloud.sauver(); }
 }

@@ -13,6 +13,15 @@ const signe   = n => (n>=0?'+':'−') + fmt(Math.abs(n));
 const MOIS = ['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
 function dateFr(iso){ const d=iso.split('-'); return MOIS[+d[1]-1]+' '+d[0]; }
 
+/* ---------- sécurité : tout texte venu d'un autre joueur passe par ici ---------- */
+const esc = v => String(v==null?'':v).replace(/[&<>"'`]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
+  '"':'&quot;',"'":'&#39;','`':'&#96;'})[c]);
+/* une photo de profil n'est acceptée que si c'est vraiment une image encodée */
+const photoSure = u => (typeof u==='string' && /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(u)) ? u : null;
+/* date du jour à l'heure locale (et pas en UTC, qui décale la série après minuit) */
+const jourLocal = (t=Date.now()) => { const d=new Date(t);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+
 /* ---------- catalogue des actifs (chargé sur les pages de jeu) ---------- */
 function nomActif(k){
   if(typeof CATALOGUE!=='undefined' && CATALOGUE.assets[k]) return CATALOGUE.assets[k].nom;
@@ -178,9 +187,9 @@ function carteHTML(c, cachee){
 
 /* série de jours : incrémentée une fois par jour, quel que soit le jeu */
 function majSerie(){
-  const auj = new Date().toISOString().slice(0,10);
+  const auj = jourLocal();
   if(G.prof.jour === auj) return false;
-  const hier = new Date(Date.now()-864e5).toISOString().slice(0,10);
+  const hier = jourLocal(Date.now()-864e5);
   G.prof.streak = (G.prof.jour === hier) ? (G.prof.streak||0)+1 : 1;
   G.prof.jour = auj;
   return true;
@@ -244,6 +253,26 @@ function wireModeSwitch(){
   applyMode();
 }
 
+/* ---------- défi du jour : le même cycle pour tout le monde ----------
+   Tiré du catalogue à partir de la date : chaque appareil tombe sur le même,
+   sans serveur. Le nom du marché enregistré avec le cycle sert au classement. */
+function defiDuJour(jour){
+  jour = jour || jourLocal();
+  if(typeof CATALOGUE==='undefined') return null;
+  let h = 2166136261;
+  for(const c of 'defi:'+jour){ h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); }
+  const L = CATALOGUE.scenarios;
+  return L[(h>>>0) % L.length];
+}
+const marcheDefi = jour => 'DÉFI '+(jour||jourLocal());
+const defiJoue = () => { try{ return localStorage.getItem('cyc_defi')===jourLocal(); }catch(e){ return false; } };
+
+/* ---------- déconnexion : rien du compte précédent ne doit rester ---------- */
+function oublierCompte(){
+  ['cyc_tok','cyc_ref','cyc_uid','cyc_sale','cyc_file','cyc_prof','cyc_hist','cyc_partie','cyc_table',
+   'cyc_last','cyc_defi'].forEach(k=>{ try{ localStorage.removeItem(k); }catch(e){} });
+}
+
 /* ---------- accès réservé aux comptes ---------- */
 function requireAuth(){
   if(G.token) return true;
@@ -254,6 +283,27 @@ function requireAuth(){
 /* ---------- navigation ---------- */
 function show(id){ $$('.screen').forEach(s=>s.classList.toggle('on', s.id===id)); }
 function go(url){ location.href = url; }
+
+/* barre de navigation du bas : quatre mots, les mêmes partout */
+function rendreNav(){
+  const nav = document.querySelector('nav.tabbar'); if(!nav) return;
+  const on = nav.dataset.on;
+  const L = [['accueil','index.html','ACCUEIL'],['ligne','salon.html','EN LIGNE'],
+             ['classement','profil.html#classement','CLASSEMENT'],['compte','profil.html','COMPTE']];
+  nav.innerHTML = L.map(([k,h,t])=>`<a href="${h}" data-k="${k}"${k===on?' class="on" aria-current="page"':''}>${t}</a>`).join('');
+  nav.querySelectorAll('a').forEach(a=>a.addEventListener('click', e=>{
+    // sur la page compte, CLASSEMENT et COMPTE font défiler au lieu de recharger
+    const cible = a.dataset.k==='classement' ? '#classement' : a.dataset.k==='compte' ? '#haut' : null;
+    const el = cible && document.querySelector(cible);
+    if(el && /profil\.html/.test(location.pathname)){ e.preventDefault(); el.scrollIntoView({behavior:'smooth'});
+      nav.querySelectorAll('a').forEach(x=>x.classList.toggle('on', x===a)); }
+  }));
+}
+rendreNav();
+
+/* le lien « mot de passe oublié » peut ramener sur n'importe quelle page */
+if(/type=recovery/.test(location.hash) && !/login\.html/.test(location.pathname))
+  location.replace('login.html'+location.hash);
 
 /* ---------- chargement à la demande des séries de prix ---------- */
 function chargerSerie(key){

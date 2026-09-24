@@ -13,34 +13,53 @@
 <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152.png?v=2">
 <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180.png?v=2">
 <link rel="icon" href="assets/icons/favicon.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/css/style.css">
 <title>Trading</title>
 </head>
 <body>
 <div id="app">
-<section class="page">
+<section class="page avec-nav">
   <div class="brand">
     <div class="mark"><img src="assets/icons/logo.png" alt=""></div>
     <div style="flex:1"><div class="nm">TRADING</div><div class="sb">CYCLES &middot; PALIERS &middot; PATIENCE</div></div>
     <div class="modesw" id="modesw"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
   </div>
 
+  <div id="authbox"><p class="note">Chargement&hellip;</p></div>
+
+  <a class="hero" id="hero" href="app.html">
+    <span class="hero-lab" id="hero-lab">NOUVELLE PARTIE DE TRADING</span>
+    <span class="hero-ligne"><b id="hero-cash">$10 000</b><i id="hero-var"></i></span>
+    <canvas id="hero-courbe" aria-hidden="true"></canvas>
+    <span class="hero-cta" id="hero-cta">LIRE UN CYCLE</span>
+  </a>
+
+  <div class="ticker" id="ticker"></div>
+
+  <h2>Tes jeux</h2>
   <div class="jeux">
-    <a class="jeu j-tr" href="app.html"><div class="t">TRADING</div><div class="s" id="j-trading">$10 000</div></a>
-    <a class="jeu j-rl" href="roulette.html"><div class="t">ROULETTE</div><div class="s" id="j-roulette">50 €</div></a>
-    <a class="jeu j-bj" href="blackjack.html"><div class="t">BLACKJACK</div><div class="s" id="j-blackjack">200 €</div></a>
-    <a class="jeu j-pk" href="poker.html"><div class="t">POKER</div><div class="s" id="j-poker">500 €</div></a>
+    <a class="jeu j-tr" href="app.html"><div class="t">TRADING</div><div class="s" id="j-trading">$10 000</div>
+      <div class="d">Lis les cycles de marché</div><span class="pastille" id="j-reprise" hidden>EN COURS</span></a>
+    <a class="jeu j-rl" href="roulette.html"><div class="t">ROULETTE</div><div class="s" id="j-roulette">50 €</div>
+      <div class="d">Du hasard pur</div></a>
+    <a class="jeu j-bj" href="blackjack.html"><div class="t">BLACKJACK</div><div class="s" id="j-blackjack">200 €</div>
+      <div class="d">Le casino le moins cruel</div></a>
+    <a class="jeu j-pk" href="poker.html"><div class="t">POKER</div><div class="s" id="j-poker">500 €</div>
+      <div class="d">Ton jugement contre 3</div></a>
   </div>
 
-  <a class="btn play" href="salon.html" style="margin-top:14px">JOUER À PLUSIEURS EN LIGNE</a>
+  <a class="bandeau-defi" href="defi.html" id="b-defi">
+    <b>DÉFI</b><span id="defi-txt">Le cycle du jour : tout le monde joue le même</span><s>GO</s>
+  </a>
+
+  <a class="btn ghost" href="salon.html">JOUER À PLUSIEURS EN LIGNE</a>
   <p class="note" style="text-align:center;margin-top:6px">Roulette, blackjack et poker
   avec tes amis, sur la même table et en temps réel.</p>
 
-  <div id="authbox"><p class="note">Chargement&hellip;</p></div>
-
-  <div id="marchebox"></div>
-
-  <div class="a2hs">
+  <div class="a2hs" id="a2hs">
     <b>Installer sur l'écran d'accueil</b><br>
     iPhone : bouton Partager dans Safari → <b>Sur l'écran d'accueil</b>.<br>
     Android : menu ⋮ → <b>Installer l'application</b>.
@@ -49,6 +68,7 @@
   <p class="note" style="text-align:center;margin-top:22px">Outil d'entraînement pédagogique.
   Aucune recommandation d'investissement.</p>
 </section>
+<nav class="tabbar" data-on="accueil"></nav>
 </div>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/audio.js"></script>

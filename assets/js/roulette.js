@@ -8,7 +8,7 @@
 
 
 const RL = {
-  mises:{}, jeton:1, tourne:false, dernier:null,
+  mises:{}, pile:[], jeton:1, tourne:false, dernier:null,
   total(){ return Object.values(this.mises).reduce((a,b)=>a+b,0); }
 };
 
@@ -23,6 +23,7 @@ function lancer(){
   const w = document.querySelector('.roulettewrap');
   if(w) w.scrollIntoView({behavior:'smooth', block:'center'});
   G.prof.cashRl -= total;               // la mise quitte la caisse au lancement
+  Cloud.sauver();                       // et c'est enregistré : recharger la page ne la rend pas
   majSoldes();
   $('#b-lancer').disabled = true;
   Audio_.play('whoosh');
@@ -33,6 +34,7 @@ function lancer(){
 }
 
 function terminer(n, mise){
+  RL.precedentes = Object.assign({}, RL.mises);
   let gain = 0, detail = [];
   for(const [cle,montant] of Object.entries(RL.mises)){
     const m = gainMise(cle, n);
@@ -47,7 +49,7 @@ function terminer(n, mise){
   if(G.prof.cashRl < 1){ ruine = true; G.prof.ruinesRl = (G.prof.ruinesRl||0)+1;
     G.prof.cashRl = RL_DEPART; }
 
-  majSerie(); saveLocal(); Cloud.saveRoulette();
+  majSerie(); Cloud.sauver();
 
   RL.dernier = n; RL.tourne = false;
   $('#b-lancer').disabled = false;
@@ -55,7 +57,7 @@ function terminer(n, mise){
   majSoldes(); dessinerHistorique(); majStats();
   Audio_.play(gain>0 ? 'win' : 'fail');
   if(gain>0) Audio_.play('coin');
-  RL.mises = {}; dessinerMises();
+  RL.mises = {}; RL.pile = []; dessinerMises();
 }
 
 /* ---------- affichage ---------- */
@@ -64,9 +66,8 @@ function afficherResultat(n, gain, mise, detail, ruine){
   const net = gain - mise;
   $('#res-num').textContent = n;
   $('#res-num').className = 'resnum ' + c;
-  $('#res-txt').innerHTML = (c==='vert'?'ZÉRO':c.toUpperCase())
-    + ' &middot; ' + (n===0?'':(n%2===0?'PAIR':'IMPAIR'))
-    + (n===0?'':' &middot; ' + (n<=18?'1 À 18':'19 À 36'));
+  $('#res-txt').innerHTML = n===0 ? 'ZÉRO &middot; la banque ramasse les mises simples'
+    : c.toUpperCase() + ' &middot; ' + (n%2===0?'PAIR':'IMPAIR') + ' &middot; ' + (n<=18?'1 À 18':'19 À 36');
   $('#res-gain').innerHTML = net>=0
     ? `<b class="pos">+${net} €</b>` : `<b class="neg">−${-net} €</b>`;
   $('#res-detail').textContent = detail.length ? detail.join(' · ')
@@ -114,7 +115,14 @@ function majStats(){
   const tri = parNum.map((v,i)=>[i,v]).sort((a,b)=>b[1]-a[1]);
   const chauds = tri.slice(0,5).map(x=>`<s class="${couleurDe(x[0])}">${x[0]}</s>`).join('');
   const froids = tri.slice(-5).reverse().map(x=>`<s class="${couleurDe(x[0])}">${x[0]}</s>`).join('');
-  box.innerHTML = `
+  // ce qui est sorti comparé à ce que prévoit le calcul : l'écart se résorbe avec le nombre de tours
+  const theo = {rouge:18/37, noir:18/37, vert:1/37};
+  const barre = (k, nom, cls) => { const obs = cpt[k]/d.length, t = theo[k];
+    return `<div class="obsrow"><u>${nom}</u><div class="obsbar"><i class="${cls}" style="width:${Math.min(100,obs*100/0.6)}%"></i>
+      <s style="left:${t*100/0.6}%"></s></div><b>${Math.round(obs*1000)/10} %</b></div>`; };
+  const graphe = `<div class="obs">${barre('rouge','ROUGE','rouge')}${barre('noir','NOIR','noir')}${barre('vert','ZÉRO','vert')}
+    <p class="note">Le trait blanc marque la probabilité réelle (48,6 % · 48,6 % · 2,7 %). Plus il y a de tours, plus les barres s'en approchent.</p></div>`;
+  box.innerHTML = graphe + `
     <div class="statgrid">
       <div><u>ROUGE</u><b>${pc(cpt.rouge)}</b></div>
       <div><u>NOIR</u><b>${pc(cpt.noir)}</b></div>
@@ -131,8 +139,9 @@ function majStats(){
 function dessinerTapis(){
   const N = n => `<button class="cell ${couleurDe(n)}" data-c="n${n}">${n}</button>`;
   let grille = '';
+  // lecture naturelle : 1 2 3 sur la première ligne, colonne 1 à gauche
   for(let l=0;l<12;l++){
-    for(let col=3;col>=1;col--){ grille += N(l*3+col); }
+    for(let col=1;col<=3;col++){ grille += N(l*3+col); }
   }
   const ext = c => `<button class="zone" data-c="${c}">${RL_MISES[c].nom}</button>`;
   $('#tapis').innerHTML = `
@@ -150,6 +159,7 @@ function dessinerTapis(){
       const c = b.dataset.c;
       if(RL.total() + RL.jeton > G.prof.cashRl){ messageRl('Solde insuffisant.'); return; }
       RL.mises[c] = (RL.mises[c]||0) + RL.jeton;
+      RL.pile.push([c, RL.jeton]);
       Audio_.play('coin'); dessinerMises(); majSoldes();
     };
   });
@@ -164,6 +174,7 @@ function dessinerMises(){
     else if(j) j.remove();
   });
   $('#b-lancer').classList.toggle('pret', RL.total()>0);
+  const rm = $('#b-remiser'); if(rm) rm.disabled = !RL.precedentes || RL.total()>0;
   majSoldes();
 }
 
@@ -174,7 +185,7 @@ function dessinerMises(){
 
   Roue.resize(); Roue.set(0, 0, Roue.R*0.735, false); Roue.draw();
   window.addEventListener('resize', ()=>{ Roue.resize();
-    Roue.set(Roue.angRoue, 0, Roue.R*0.735, !!RL.dernier); Roue.draw(); });
+    Roue.set(Roue.angRoue, 0, Roue.R*0.735, RL.dernier!=null); Roue.draw(); });
 
   dessinerTapis(); dessinerMises(); dessinerHistorique(); majStats(); majSoldes();
 
@@ -183,13 +194,20 @@ function dessinerMises(){
       $$('.jetons b').forEach(x=>x.classList.toggle('on', x===b)); };
   });
   $('#b-lancer').onclick  = ()=>{ Audio_.wake(); lancer(); };
-  $('#b-annuler').onclick = ()=>{ if(RL.tourne) return; Audio_.play('click');
-    const k = Object.keys(RL.mises); if(!k.length) return;
-    const d = k[k.length-1];
-    RL.mises[d] -= RL.jeton; if(RL.mises[d]<=0) delete RL.mises[d];
+  // annule vraiment le dernier jeton posé, avec sa vraie valeur
+  $('#b-annuler').onclick = ()=>{ if(RL.tourne) return;
+    const der = RL.pile.pop(); if(!der) return; Audio_.play('click');
+    const [c, v] = der;
+    RL.mises[c] -= v; if(RL.mises[c]<=0) delete RL.mises[c];
     dessinerMises(); };
   $('#b-vider').onclick   = ()=>{ if(RL.tourne) return; Audio_.play('click');
-    RL.mises = {}; dessinerMises(); };
+    RL.mises = {}; RL.pile = []; dessinerMises(); };
+  // rejouer les mêmes mises d'un geste
+  $('#b-remiser').onclick = ()=>{ if(RL.tourne || !RL.precedentes) return;
+    const tot = Object.values(RL.precedentes).reduce((a,b)=>a+b,0);
+    if(tot + RL.total() > G.prof.cashRl){ messageRl('Solde insuffisant pour remettre les mêmes mises.'); return; }
+    for(const [c,v] of Object.entries(RL.precedentes)){ RL.mises[c]=(RL.mises[c]||0)+v; RL.pile.push([c,v]); }
+    Audio_.play('coin'); dessinerMises(); };
   $$('.fen b').forEach(b=>{
     b.onclick = ()=>{ FENETRE = +b.dataset.f; Audio_.play('click');
       $$('.fen b').forEach(x=>x.classList.toggle('on', x===b)); majStats(); };

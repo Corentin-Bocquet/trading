@@ -27,6 +27,8 @@ function nouvelleMain(){
   PK.joueurs.forEach(j=>{ if(j.tapis < PK.blinde) j.tapis = 500; });   // les adversaires se recavent
   PK.sabot = nouveauSabot(1);
   PK.commune = []; PK.pot = 0; PK.tour='preflop'; PK.fini=false;
+  PK.aParle = 0;                               // sinon le compte de la main d'avant court encore
+  PK.debut = PK.joueurs[0].tapis;              // pour annoncer le vrai gain net de la main
   PK.bouton = (PK.bouton+1) % 4;
   PK.joueurs.forEach(j=>{ j.main=[PK.sabot.pop(), PK.sabot.pop()];
     j.engage=0; j.total=0; j.couche=false; j.allin=false; });
@@ -47,6 +49,8 @@ function engager(i, m){
   const v = Math.max(0, Math.min(m, j.tapis));
   j.tapis -= v; j.engage += v; j.total = (j.total||0) + v; PK.pot += v;
   if(j.tapis===0) j.allin = true;
+  // ce que tu mises quitte ta caisse tout de suite : recharger la page ne le rend pas
+  if(j.humain && v>0){ G.prof.cashPk = Math.round(j.tapis); Cloud.sauver(); }
 }
 
 const enJeu = () => PK.joueurs.filter(j=>!j.couche);
@@ -69,6 +73,7 @@ function tourDeJeu(){
 }
 
 function avancer(){
+  if(PK.fini) return;
   PK.aParle = (PK.aParle||0) + 1;
   PK.actif = (PK.actif+1)%4;
   peindrePK();
@@ -76,14 +81,18 @@ function avancer(){
 }
 
 function actionSuivre(i){
+  if(PK.fini) return;
   const j = PK.joueurs[i], d = PK.mise - j.engage;
   engager(i, d);
   Audio_.play(d>0?'coin':'click');
   avancer();
 }
-function actionCoucher(i){ PK.joueurs[i].couche = true; Audio_.play('click'); avancer(); }
+function actionCoucher(i){ if(PK.fini) return; PK.joueurs[i].couche = true; Audio_.play('click'); avancer(); }
 function actionRelancer(i, montant){
+  if(PK.fini) return;
   const j = PK.joueurs[i];
+  // un tapis qui ne couvre même pas la mise en cours n'est pas une relance
+  if(j.engage + j.tapis <= PK.mise){ actionSuivre(i); return; }
   const cible = Math.min(j.engage + j.tapis, Math.max(PK.mise + PK.relanceMin, montant));
   engager(i, cible - j.engage);
   PK.relanceMin = Math.max(PK.relanceMin, cible - PK.mise);
@@ -111,7 +120,6 @@ function finirMain(){
   PK.fini = true; PK.tour = 'abattage';
   while(PK.commune.length<5 && enJeu().length>1) PK.commune.push(PK.sabot.pop());
 
-  const avant = PK.joueurs[0].tapis;
   const lignes = [];
 
   const forces = new Map();
@@ -138,13 +146,15 @@ function finirMain(){
     const reste = montant - part*gagnants.length;
     gagnants.forEach((j,k)=> j.tapis += part + (k===0 ? reste : 0));
     reparti += montant;
-    lignes.push(gagnants.map(j=>j.nom).join(' et ')
-      + (best ? ' : ' + NOM_MAIN[best[0]] : ' remporte')
-      + ' — ' + montant + ' €');
+    // un même gagnant sur plusieurs pots : une seule ligne, montants additionnés
+    const qui = gagnants.map(j=>j.nom).join(' et ') + (best ? ' avec ' + NOM_MAIN[best[0]].toLowerCase() : ' remporte');
+    const deja = lignes.find(l=>l.qui===qui);
+    if(deja) deja.m += montant; else lignes.push({qui, m:montant});
   });
   PK.pot = Math.max(0, PK.pot - reparti);
+  lignes.forEach((l,k)=>{ lignes[k] = l.qui + ' : ' + l.m + ' €'; });
 
-  const delta = PK.joueurs[0].tapis - avant;
+  const delta = PK.joueurs[0].tapis - (PK.debut!=null ? PK.debut : PK.joueurs[0].tapis);
   G.prof.mainsPk = (G.prof.mainsPk||0)+1;
 
   // ruine constatée tout de suite : on ne laisse pas une cave vide traîner
@@ -156,8 +166,8 @@ function finirMain(){
     lignes.push('Tu as tout perdu : cave remise à ' + PK_DEPART + ' €');
   }
   G.prof.cashPk = Math.round(PK.joueurs[0].tapis);
-  majSerie(); saveLocal(); Cloud.saveJeu('poker');
-  Audio_.play(delta>0?'win':'fail');
+  majSerie(); Cloud.sauver();
+  Audio_.play(delta>0?'win':delta<0?'fail':'click');
   peindrePK(lignes.join(' · '), delta, ruine);
 }
 
@@ -175,6 +185,8 @@ function forceMain(j){
   return Math.min(1, r[0]/8 + 0.06);
 }
 function jouerBot(i){
+  // la main a pu se terminer pendant que l'adversaire « réfléchissait »
+  if(PK.fini || PK.actif!==i) return;
   const j = PK.joueurs[i];
   if(j.couche || j.allin){ avancer(); return; }
   const f = forceMain(j) + (Math.random()-0.5)*0.16;
@@ -222,10 +234,11 @@ function peindrePK(resume, delta, ruine){
   $('#pk-nouvelle').style.display = PK.fini ? '' : 'none';
   if(monTour){
     const aPayer = PK.mise - moi.engage;
-    $('#b-suivre').textContent = aPayer>0 ? `SUIVRE ${aPayer} €` : 'PARLER';
+    $('#b-suivre').textContent = aPayer>0 ? `SUIVRE ${Math.min(aPayer, moi.tapis)} €` : 'PAROLE (CHECK)';
     $('#b-coucher').style.display = aPayer>0 ? '' : 'none';
     const relance = PK.mise + PK.relanceMin;
     $('#b-relancer').textContent = `RELANCER À ${Math.min(relance, moi.engage+moi.tapis)} €`;
+    $('#b-relancer').disabled = moi.engage + moi.tapis <= PK.mise;
     $('#b-tapis').textContent = `TAPIS ${fmt(moi.tapis)} €`;
   }
   $('#pk-resume').innerHTML = resume
