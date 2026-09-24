@@ -22,7 +22,7 @@ function tapisOL(){
   if(OL.tapisFait) return;
   const N = n => `<button class="cell ${couleurDe(n)}" data-c="n${n}">${n}</button>`;
   let grille = '';
-  for(let l=0;l<12;l++) for(let col=3;col>=1;col--) grille += N(l*3+col);
+  for(let l=0;l<12;l++) for(let col=1;col<=3;col++) grille += N(l*3+col);
   const ext = c => `<button class="zone" data-c="${c}">${RL_MISES[c].nom}</button>`;
   $('#ol-tapis').innerHTML = `
     <div class="zerorow"><button class="cell vert large" data-c="n0">0</button></div>
@@ -38,7 +38,7 @@ function tapisOL(){
       const e = S.etat;
       if(!e || e.phase!=='mises') return;
       if(OL.jeton > G.prof.cashRl){ msgTable('Caisse insuffisante.'); return; }
-      G.prof.cashRl -= OL.jeton; saveLocal();
+      debiter('roulette', OL.jeton);
       envoyerAction({type:'mise', cle:b.dataset.c, montant:OL.jeton});
       Audio_.play('coin'); peindreJeu();
     };
@@ -49,9 +49,8 @@ function tapisOL(){
   });
   $('#ol-vider').onclick = ()=>{
     const e = S.etat; if(!e || e.phase!=='mises') return;
-    const m = (e.joueurs[S.moi.id]||{}).total || 0;
-    if(!m) return;
-    G.prof.cashRl += m; saveLocal();
+    if(!DEBIT.roulette.v) return;
+    rembourser('roulette', 0); peindreJeu();
     envoyerAction({type:'vider'}); Audio_.play('click');
   };
   $('#ol-lancer').onclick = ()=>{ Audio_.wake();
@@ -84,7 +83,7 @@ function peindreRouletteOL(e){
 
   const parJoueur = S.joueurs.map(j=>{
     const x = e.joueurs[j.id]; if(!x || !x.total) return '';
-    return `<s>${j.pseudo} ${x.total} €</s>`;
+    return `<s>${esc(j.pseudo)} ${x.total} €</s>`;
   }).join('');
   $('#ol-mises').innerHTML = parJoueur || '<span class="note">aucune mise posée</span>';
 
@@ -118,7 +117,7 @@ function peindreBlackjackOL(e){
     const p = pointsBJ(m.cartes||[]);
     const r = e.resultats && e.resultats[j.id];
     return `<div class="bjmain${e.tour===j.id?' actif':''}${p.total>21?' saute':''}">
-      <div class="pknom">${j.pseudo}${j.id===S.moi.id?' (toi)':''}</div>
+      <div class="pknom">${esc(j.pseudo)}${j.id===S.moi.id?' (toi)':''}</div>
       <div class="cartes">${(m.cartes||[]).map(c=>carteHTML(c)).join('')||'<i class="note">—</i>'}</div>
       <div class="bjpts">${m.cartes&&m.cartes.length?p.total:''} · ${m.mise||0} €
         ${r?` <b class="${r.net>0?'pos':r.net<0?'neg':''}">${r.r}</b>`:''}</div>
@@ -133,7 +132,7 @@ function peindreBlackjackOL(e){
   if(e.phase==='jeu' && e.tour===S.moi.id && moi)
     $('#ol-bj-doubler').disabled = (moi.cartes||[]).length!==2 || moi.mise>G.prof.cashBj;
   $('#ol-bj-etat').textContent = e.phase==='mises' ? 'MISES'
-    : e.phase==='jeu' ? (e.tour===S.moi.id ? 'À TOI' : 'AU TOUR DE '+pseudoDe(e.tour).toUpperCase())
+    : e.phase==='jeu' ? (e.tour===S.moi.id ? 'À TOI' : 'AU TOUR DE '+esc(pseudoDe(e.tour).toUpperCase()))
     : e.phase==='croupier' ? 'LE CROUPIER JOUE' : 'MAIN TERMINÉE';
 }
 
@@ -145,7 +144,9 @@ function cablerBlackjackOL(){
   $('#ol-bj-miser').onclick = ()=>{ Audio_.wake();
     const e = S.etat; if(!e || e.phase!=='mises') return;
     if(OL.miseBj > G.prof.cashBj){ msgTable('Caisse insuffisante.'); return; }
-    G.prof.cashBj -= OL.miseBj; saveLocal();
+    // une seule mise par main : le double tap ne débite plus deux fois
+    const moi = e.joueurs[S.moi.id]; if((moi && moi.mise) || DEBIT.blackjack.manche===e.manche && DEBIT.blackjack.v>0) return;
+    debiter('blackjack', OL.miseBj);
     envoyerAction({type:'mise', montant:OL.miseBj});
     Audio_.play('coin');
   };
@@ -154,7 +155,8 @@ function cablerBlackjackOL(){
   $('#ol-bj-doubler').onclick = ()=>{
     const moi = S.etat && S.etat.joueurs[S.moi.id]; if(!moi) return;
     if(moi.mise > G.prof.cashBj){ msgTable('Caisse insuffisante pour doubler.'); return; }
-    G.prof.cashBj -= moi.mise; saveLocal();
+    if((moi.cartes||[]).length!==2 || moi.doublee) return;
+    debiter('blackjack', moi.mise);
     Audio_.play('coin'); envoyerAction({type:'doubler'});
   };
 }
@@ -179,7 +181,7 @@ function peindrePokerOL(e){
     const mienne = j.id===S.moi.id ? S.maMain : null;
     const cartes = ab || mienne;
     return `<div class="pkbot${x.couche?' couche':''}${e.tour===j.id?' actif':''}">
-      <div class="pknom">${j.pseudo}${j.id===e.bouton?' <s class="bouton">D</s>':''}</div>
+      <div class="pknom">${esc(j.pseudo)}${j.id===e.bouton?' <s class="bouton">D</s>':''}</div>
       <div class="cartes mini">${cartes ? cartes.map(c=>carteHTML(c)).join('')
         : (e.phase==='mises' ? '' : carteHTML(null,true)+carteHTML(null,true))}</div>
       <div class="pktapis">${fmt(x.tapis)} €${x.engage?` · mise ${x.engage} €`:''}${
@@ -204,7 +206,7 @@ function peindrePokerOL(e){
   $('#ol-pk-resume').textContent = e.resume || '';
   $('#ol-pk-etat').textContent = e.phase==='mises' ? 'EN ATTENTE DES JOUEURS'
     : e.phase==='fini' ? 'ABATTAGE'
-    : (e.tour===S.moi.id ? 'À TOI DE PARLER' : 'AU TOUR DE '+pseudoDe(e.tour).toUpperCase());
+    : (e.tour===S.moi.id ? 'À TOI DE PARLER' : 'AU TOUR DE '+esc(pseudoDe(e.tour).toUpperCase()));
 }
 
 function cablerPokerOL(){
@@ -231,7 +233,7 @@ function avantQuitter(){
   const e = S.etat;
   if(S.jeu==='poker' && e && e.joueurs && e.joueurs[S.moi.id]){
     G.prof.cashPk = Math.max(0, Math.round((S.horsTable||0) + e.joueurs[S.moi.id].tapis));
-    saveLocal(); Cloud.saveJeu('poker');
+    Cloud.sauver();
   }
 }
 

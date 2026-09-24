@@ -33,10 +33,11 @@ function missionBar(){
 const SPARK='<svg width="13" height="13" viewBox="0 0 24 24" style="flex:0 0 auto"><path d="M12 0c.6 6.2 5.2 10.8 12 12-6.8 1.2-11.4 5.8-12 12-.6-6.2-5.2-10.8-12-12C6.8 10.8 11.4 6.2 12 0z" fill="currentColor"/></svg>';
 const AVCOL=['#e0648a','#5b8def','#3fbf8f','#8b5cf6','#f59e0b','#ef4444'];
 function avatar(nom, photo){
+  photo = photoSure(photo);
   if(photo) return `<div class="av photo" style="background-image:url('${photo}')"></div>`;
   let h=0; for(const c of (nom||'?')) h=(h*31+c.charCodeAt(0))|0;
   const col=AVCOL[Math.abs(h)%AVCOL.length];
-  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${(nom||'?')[0].toUpperCase()}</div>`;
+  return `<div class="av" style="background:linear-gradient(150deg,${col},${col}99)">${esc([...(nom||'?')][0].toUpperCase())}</div>`;
 }
 
 const MESURES = {
@@ -120,24 +121,24 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
   mesure = MESURES[mesure] ? mesure : 'argent';
   const M = MESURES[mesure], jeu = M.jeu;
   const tri = list.slice().sort(M.tri);
-  const estMoi = u => moi && u.pseudo===moi.pseudo && u.xp===moi.xp;
+  const estMoi = u => moi && (u.id && moi.id ? u.id===moi.id : (u.pseudo===moi.pseudo && u.xp===moi.xp));
   const badges = u => badgeRuines(u,jeu) + badgeSerie(u);
 
   const pill = (u,i)=>`
-    <div class="lbrow r${i+1}${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
+    <div class="lbrow r${i+1}${estMoi(u)?' me':''}" data-i="${list.indexOf(u)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badges(u)}</div>
+      <div class="nm">${esc(u.pseudo)}${badges(u)}</div>
       <div class="pt">${M.val(u)} ${SPARK}</div>
     </div>`;
   const ligne = (u,i)=>`
-    <div class="lbline${estMoi(u)?' me':''}" data-p="${encodeURIComponent(u.pseudo)}">
+    <div class="lbline${estMoi(u)?' me':''}" data-i="${list.indexOf(u)}">
       <div class="rk">${i+1}</div>${avatar(u.pseudo, u.avatar)}
-      <div class="nm">${u.pseudo}${badges(u)}</div>
+      <div class="nm">${esc(u.pseudo)}${badges(u)}</div>
       <div class="pt">${M.val(u)}</div>
     </div>`;
 
   const corps = tout
-    ? `<div class="lblist">${tri.slice(0,20).map(ligne).join('')}</div>`
+    ? `<div class="lblist">${tri.slice(0,50).map(ligne).join('')}</div>`
     : `<div class="lbwrap"><div class="lbstack">${tri.slice(0,5).map(pill).join('')}</div></div>`;
 
   const monRang = tri.findIndex(estMoi)+1;
@@ -153,20 +154,19 @@ function leaderboard(list, rang, demo, moi, mesure, tout){
   const dem = demo?expl('Classement de démonstration. Crée un compte pour être classé face aux vrais joueurs.'):'';
   return jeux + onglets + corps + rank + bouton
        + expl(M.phrase + ' Appuie sur un joueur pour voir sa fiche.')
-       + expl('Le badge <b>SÉRIE</b> est le nombre de jours d’affilée où le joueur est venu jouer, au trading ou à la roulette.')
+       + expl('Le badge <b>SÉRIE</b> est le nombre de jours d’affilée où le joueur est venu jouer, à n’importe lequel des quatre jeux.')
        + dem;
 }
 
 /* --- fiche d'un joueur, ouverte depuis le classement --- */
-async function ouvrirFiche(pseudo, liste){
-  const u = (liste||[]).find(x=>x.pseudo===pseudo);
+async function ouvrirFiche(u){
   if(!u) return;
   const el = $('#fiche'); if(!el) return;
   const prec = precisionDe(u);
   el.innerHTML = `<div class="inner">
     <div class="phead">
       ${avatar(u.pseudo,u.avatar).replace('class="av"','class="av gros"').replace('class="av photo"','class="av photo gros"')}
-      <div class="pinfo"><div class="prow"><span>${u.pseudo}</span></div>
+      <div class="pinfo"><div class="prow"><span>${esc(u.pseudo)}</span></div>
         <div class="note">niveau ${u.level||1} · ${fmt(u.xp||0)} XP${u.streak?` · série ${u.streak} j`:''}</div></div>
       <button class="wordbtn sm" id="f-close">FERMER</button>
     </div>
@@ -186,18 +186,18 @@ async function ouvrirFiche(pseudo, liste){
   el.classList.add('on');
   $('#f-close').onclick = ()=>{ Audio_.play('click'); el.classList.remove('on'); };
 
-  const h = await Cloud.sessionsDe(pseudo);
+  const h = await Cloud.sessionsDe(u.id);
   courbeArgent('f-courbe', h);
   $('#f-hist').innerHTML = h.slice().reverse().slice(0,12).map(x=>`
-    <div class="kv"><span>${nomActif(x.a)}
+    <div class="kv"><span>${esc(nomActif(x.a))}
       <span style="color:var(--dim)">· ${new Date(x.t).toLocaleDateString('fr-FR')}</span></span>
     <b style="color:${x.gain>=0?'#5fe8b6':'#ff9098'}">${x.gain>=0?'+':'−'}$${fmt(Math.abs(x.gain))}</b></div>`
   ).join('') || '<p class="note">Aucun cycle enregistré.</p>';
 }
 
 function brancherLignes(liste){
-  $$('.lbrow[data-p],.lbline[data-p]').forEach(r=>{
-    r.onclick = ()=>{ Audio_.play('click'); ouvrirFiche(decodeURIComponent(r.dataset.p), liste); };
+  $$('.lbrow[data-i],.lbline[data-i]').forEach(r=>{
+    r.onclick = ()=>{ Audio_.play('click'); ouvrirFiche(liste[+r.dataset.i]); };
   });
 }
 
@@ -300,7 +300,8 @@ function brancherBilan(sc){
     if(typeof peindreSetup==='function') peindreSetup();
     show('s-setup'); };
   $('#b-seechart').onclick = ()=>{ Audio_.play('click'); G.view.span = sc.end-sc.start+1;
-    G.endVisible = sc.end; show('s-game'); Chart.resize(); Chart.draw(); };
+    G.endVisible = sc.end; G.decIdx = sc.end; modeRevue(true);
+    show('s-game'); Chart.resize(); Chart.draw(); updateGate(); };
   $('#b-prof').onclick     = ()=>{ Audio_.play('click'); go('profil.html'); };
 }
 

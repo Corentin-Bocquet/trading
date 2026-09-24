@@ -823,3 +823,85 @@ input[type=range]::-moz-range-thumb{width:26px;height:26px;border:0;border-radiu
    et leur contenu déborde par-dessus les boutons qui suivent */
 .page > *{flex-shrink:0}
 .lbtabs.jeux2 b{padding:9px 4px;font-size:9px;letter-spacing:.03em}
+
+/* ============================================================
+   RESTRUCTURATION : navigation du bas, accueil, compte,
+   réglages du trading. Même langage visuel que le reste.
+   ============================================================ */
+a{color:inherit}
+.btn{text-align:center;text-decoration:none}
+.btn:disabled{opacity:.4}
+.btnsub{display:block;font-size:10.5px;letter-spacing:.12em;opacity:.7;margin-top:3px}
+
+/* tuiles de jeu : le solde n'hérite plus de la couleur des liens */
+.jeu{color:var(--txt);transition:transform .12s}
+.jeu:active{transform:scale(.97)}
+.jeu .s{color:var(--txt);opacity:.85;font-size:13px}
+.jeu .d{font-size:10.5px;color:var(--dim);margin-top:5px;font-weight:600}
+.jeu .pastille{position:absolute;top:-7px;right:8px;padding:3px 7px;border-radius:6px;font-size:8.5px;
+  font-weight:800;letter-spacing:.08em;background:var(--gold2);color:#3a2600}
+.jeu .pastille[hidden]{display:none}
+
+/* barre de navigation : quatre mots, toujours au même endroit */
+.tabbar{position:absolute;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);
+  background:rgba(18,20,25,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);padding:6px 6px calc(env(safe-area-inset-bottom) + 6px)}
+.tabbar a{display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:12px;
+  text-decoration:none;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--dim)}
+.tabbar a.on{color:var(--gold2);background:rgba(245,165,36,.1)}
+.page.avec-nav{padding-bottom:calc(env(safe-area-inset-bottom) + 84px)}
+
+/* salutation sur l'accueil */
+.salut{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;text-decoration:none;
+  background:var(--panel2);border:1px solid var(--line)}
+.salut .av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;
+  color:#fff;flex:0 0 auto;background-size:cover;background-position:center}
+.salut .pinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.salut .pinfo b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.salut .lvl-badge{flex:0 0 auto}
+
+/* page compte : les trois caisses de casino côte à côte */
+.caisses{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.caisse{display:flex;flex-direction:column;gap:3px;padding:12px 10px;border-radius:14px;text-decoration:none;
+  background:var(--panel2);border:1px solid var(--line);border-top:3px solid var(--line);min-width:0}
+.caisse.j-rl{border-top-color:#ffd34d}.caisse.j-bj{border-top-color:#16c784}.caisse.j-pk{border-top-color:#ea3943}
+.caisse u{text-decoration:none;font-size:9px;letter-spacing:.1em;color:var(--dim);font-weight:800}
+.caisse b{font-family:var(--mono);font-size:17px}
+.caisse i{font-style:normal;font-size:11px;font-weight:700}
+.caisse .note{font-size:10px}
+
+/* réglages du trading : étapes numérotées */
+.etape{display:flex;align-items:center;gap:9px;margin:22px 0 10px;font-size:13px;font-weight:800;
+  letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.etape s{text-decoration:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:11px;background:var(--gold);color:#3a2600}
+.mgrid.trois{grid-template-columns:repeat(3,1fr)}
+.mgrid.trois .mbtn{padding:13px 4px;font-size:11px}
+.mphrase{margin:2px 0 4px}
+.mphrase b{color:var(--muted)}
+.reprise{display:flex;flex-direction:column;gap:4px;padding:14px;border-radius:16px;margin-bottom:14px;
+  background:rgba(245,165,36,.08);border:1px solid rgba(245,165,36,.35)}
+.reprise u{text-decoration:none;font-size:9.5px;letter-spacing:.14em;color:var(--gold);font-weight:800}
+.reprise b{display:block;font-size:17px;margin:2px 0}
+.aide{margin-top:14px;padding:12px 14px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);
+  font-size:13px;line-height:1.5;color:var(--muted)}
+.aide summary{cursor:pointer;font-weight:800;color:var(--txt);letter-spacing:.02em}
+.aide ol{padding-left:18px;margin:10px 0}
+.aide b{color:var(--txt)}
+
+/* roulette : ce qui est sorti comparé à la probabilité réelle */
+.obs{padding:12px 14px;border-radius:14px;background:var(--panel2);border:1px solid var(--line);margin-bottom:10px}
+.obsrow{display:grid;grid-template-columns:56px 1fr 52px;align-items:center;gap:10px;margin:6px 0}
+.obsrow u{text-decoration:none;font-size:9.5px;letter-spacing:.1em;color:var(--dim);font-weight:800}
+.obsrow b{font-family:var(--mono);font-size:12.5px;text-align:right}
+.obsbar{position:relative;height:10px;border-radius:5px;background:#1e2127;overflow:visible}
+.obsbar i{display:block;height:100%;border-radius:5px;background:#3a3f49;transition:width .5s}
+.obsbar i.rouge{background:#c8202e}.obsbar i.noir{background:#5b626e}.obsbar i.vert{background:#0d9a4f}
+.obsbar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;border-radius:1px;opacity:.85}
+.rlactions .row .btn{font-size:11.5px;padding:13px 6px}
+
+/* focus clavier visible partout */
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible{outline:2px solid var(--gold2);outline-offset:2px}
+.back{text-decoration:none}
+#p-mission{margin-top:16px}
+.wordbtn,.marchebtn{text-decoration:none;text-align:center}

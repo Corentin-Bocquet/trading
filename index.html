@@ -18,29 +18,32 @@
 </head>
 <body>
 <div id="app">
-<section class="page">
+<section class="page avec-nav">
   <div class="brand">
     <div class="mark"><img src="assets/icons/logo.png" alt=""></div>
     <div style="flex:1"><div class="nm">TRADING</div><div class="sb">CYCLES &middot; PALIERS &middot; PATIENCE</div></div>
     <div class="modesw" id="modesw"><b data-m="simple">SIMPLE</b><b data-m="pro">PRO</b></div>
   </div>
 
+  <div id="authbox"><p class="note">Chargement&hellip;</p></div>
+
+  <h2>Choisis ton jeu</h2>
   <div class="jeux">
-    <a class="jeu j-tr" href="app.html"><div class="t">TRADING</div><div class="s" id="j-trading">$10 000</div></a>
-    <a class="jeu j-rl" href="roulette.html"><div class="t">ROULETTE</div><div class="s" id="j-roulette">50 €</div></a>
-    <a class="jeu j-bj" href="blackjack.html"><div class="t">BLACKJACK</div><div class="s" id="j-blackjack">200 €</div></a>
-    <a class="jeu j-pk" href="poker.html"><div class="t">POKER</div><div class="s" id="j-poker">500 €</div></a>
+    <a class="jeu j-tr" href="app.html"><div class="t">TRADING</div><div class="s" id="j-trading">$10 000</div>
+      <div class="d">Lis les cycles de marché</div><span class="pastille" id="j-reprise" hidden>PARTIE EN COURS</span></a>
+    <a class="jeu j-rl" href="roulette.html"><div class="t">ROULETTE</div><div class="s" id="j-roulette">50 €</div>
+      <div class="d">Du hasard pur</div></a>
+    <a class="jeu j-bj" href="blackjack.html"><div class="t">BLACKJACK</div><div class="s" id="j-blackjack">200 €</div>
+      <div class="d">Le casino le moins cruel</div></a>
+    <a class="jeu j-pk" href="poker.html"><div class="t">POKER</div><div class="s" id="j-poker">500 €</div>
+      <div class="d">Ton jugement contre 3</div></a>
   </div>
 
-  <a class="btn play" href="salon.html" style="margin-top:14px">JOUER À PLUSIEURS EN LIGNE</a>
+  <a class="btn play" href="salon.html">JOUER À PLUSIEURS EN LIGNE</a>
   <p class="note" style="text-align:center;margin-top:6px">Roulette, blackjack et poker
   avec tes amis, sur la même table et en temps réel.</p>
 
-  <div id="authbox"><p class="note">Chargement&hellip;</p></div>
-
-  <div id="marchebox"></div>
-
-  <div class="a2hs">
+  <div class="a2hs" id="a2hs">
     <b>Installer sur l'écran d'accueil</b><br>
     iPhone : bouton Partager dans Safari → <b>Sur l'écran d'accueil</b>.<br>
     Android : menu ⋮ → <b>Installer l'application</b>.
@@ -49,6 +52,7 @@
   <p class="note" style="text-align:center;margin-top:22px">Outil d'entraînement pédagogique.
   Aucune recommandation d'investissement.</p>
 </section>
+<nav class="tabbar" data-on="accueil"></nav>
 </div>
 <script src="assets/js/core.js"></script>
 <script src="assets/js/audio.js"></script>

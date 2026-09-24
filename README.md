@@ -6,7 +6,11 @@ on **dézoome**, et on **fractionne** ses entrées et ses sorties par paliers.
 
 ## Quatre jeux, un seul compte
 
-L'accueil ouvre sur quatre tuiles : **TRADING**, **ROULETTE**, **BLACKJACK**, **POKER**.
+L'accueil ouvre sur quatre tuiles : **TRADING**, **ROULETTE**, **BLACKJACK**, **POKER**,
+chacune avec son solde et une phrase qui dit à quoi elle sert. Une barre en bas,
+identique sur l'accueil, le salon et le compte, mène partout en un geste :
+**ACCUEIL · EN LIGNE · CLASSEMENT · COMPTE**. Dans chaque jeu, le bouton **ACCUEIL**
+est toujours en haut à droite.
 Même compte, même pseudo, même photo, même série de jours — mais **une caisse par jeu**
 et **un classement par jeu**.
 
@@ -82,9 +86,12 @@ Deux canaux :
 | `realtime:hall` | qui est en ligne, quelles tables sont ouvertes |
 | `realtime:salon:<CODE>` | une table, son état, ses actions, son chat |
 
-**Le joueur dont l'identifiant est le plus petit tient la table.** Tout le monde
-trie la même liste de présences et arrive donc au même hôte, sans élection ni
-négociation. L'hôte tire les numéros et les cartes, applique les actions reçues
+**Le premier arrivé tient la table** (à égalité, le plus petit identifiant).
+Tout le monde trie la même liste de présences et arrive donc au même hôte, sans
+élection ni négociation, et un nouveau venu ne prend jamais la main en pleine partie.
+L'hôte rediffuse l'état à chaque arrivée : le nouveau peut miser tout de suite.
+Le bouton **INVITER** partage un lien qui ouvre directement la table chez l'ami,
+et rejoindre par code place toujours dans le jeu de la table. L'hôte tire les numéros et les cartes, applique les actions reçues
 et rediffuse l'**état complet** ; les autres n'envoient que des actions. Une
 désynchronisation ne survit pas au message suivant. Si l'hôte s'en va, le
 successeur est immédiat et relance la table si elle était figée en plein tour.
@@ -125,7 +132,9 @@ Sinon le bilan s'affiche directement.
 
 ## Réglages avant chaque partie de trading
 
-Avant de lancer un cycle, deux curseurs :
+Tout se règle sur un seul écran, en deux étapes numérotées : **1. le marché**
+(voir « Sept marchés » plus bas, avec le nombre de cycles disponibles) et
+**2. deux curseurs** :
 
 - **Ce que tu engages** — de 5 % à 100 % du portefeuille (100 % par défaut).
   Le reste est mis de côté et ne bouge pas.
@@ -139,6 +148,12 @@ ouvre sa fiche** : ses chiffres des deux jeux, sa courbe d'argent et ses dernier
 cycles. Un badge **SÉRIE** indique le nombre de jours d'affilée où il est venu jouer,
 au trading comme à la roulette.
 
+## Partie interrompue, partie reprise
+
+La partie de trading est sauvegardée à chaque manche. Si l'app se ferme (appel,
+écran verrouillé, retour à l'accueil), l'écran de réglages propose **REPRENDRE**
+au bon endroit, et la tuile TRADING de l'accueil affiche « PARTIE EN COURS ».
+
 ## Deux modes, une seule progression
 
 Bascule **SIMPLE / PRO** en haut de chaque écran. Même compte, même portefeuille,
@@ -149,7 +164,7 @@ Un nouveau compte démarre en SIMPLE ; le choix est ensuite mémorisé.
 
 ## Sept marchés
 
-Le marché se choisit sur l'accueil, en un mot :
+Le marché se choisit sur l'écran de réglages du trading, en un mot :
 
 | Marché | Contenu |
 |---|---|
@@ -231,7 +246,8 @@ qui lit les abonnés dans Supabase et appelle `tools/rappel.mjs`. Deux secrets s
 - `VAPID_PRIVATE` — clé privée des notifications
 - `SUPABASE_SERVICE` — clé `service_role` du projet Supabase
 
-Sans ces deux secrets, la tâche s'arrête proprement en le signalant.
+Sans ces deux secrets, la tâche s'arrête proprement en le signalant (avertissement,
+pas d'échec rouge chaque jour).
 
 ## Arborescence
 
@@ -303,6 +319,33 @@ et les cycles Bitcoin.
 Le scoring est toujours calculé par **zone** de cycle, jamais en binaire :
 la position du prix entre le creux du cycle et le sommet précédent pour un
 achat, entre le creux et le sommet suivant pour une prise de profits.
+
+## Synchronisation
+
+- Chaque modification (mise, gain, cycle joué) est enregistrée sur le téléphone
+  **et** marquée « à envoyer ». L'envoi au serveur est regroupé toutes les 900 ms.
+- Si l'envoi échoue (hors connexion, serveur lent), rien n'est perdu : au prochain
+  chargement, la progression locale non envoyée **fait foi** et repart vers le serveur.
+  Les cycles de trading joués hors connexion attendent dans une file et sont
+  enregistrés au retour du réseau.
+- En quittant la page, l'envoi en attente part immédiatement.
+- Le jeton de connexion Supabase expire au bout d'une heure : il est renouvelé
+  automatiquement et la requête est rejouée, sans déconnecter le joueur.
+- Une mise quitte la caisse **au moment du geste** et c'est enregistré tout de suite :
+  recharger la page en pleine main ne rend plus la mise.
+- En ligne, chaque manche a un identifiant. Une mise débitée chez le joueur mais
+  jamais prise en compte par l'hôte (clic trop tard, double tap, départ de l'hôte)
+  est remboursée automatiquement.
+- La déconnexion efface toutes les données du compte sur l'appareil.
+
+Le service worker sert les pages et le code **réseau d'abord** : une correction
+publiée arrive au prochain chargement, sans rien vider. Le cache ne sert qu'hors
+connexion. Sons et icônes restent en cache d'abord.
+
+## Sécurité
+
+Tout ce qui vient d'un autre joueur (pseudo, message du salon, photo) est échappé
+avant affichage. Une photo n'est acceptée que si c'est une vraie image encodée.
 
 ## Backend
 

@@ -27,10 +27,16 @@ function distribuer(){
   if(BJ.mise < 1){ messageBJ('Pose au moins un jeton.'); return; }
   if(BJ.mise > G.prof.cashBj){ messageBJ('Caisse insuffisante.'); return; }
   G.prof.cashBj -= BJ.mise;
+  Cloud.sauver();                 // la mise est enregistrée : recharger la page ne la rend pas
   BJ.mains = [{cartes:[piocher(), piocher()], mise:BJ.mise, finie:false, doublee:false}];
   BJ.croupier = [piocher(), piocher()];
   BJ.iMain = 0; BJ.phase='joueur'; BJ.gainTour = 0;
   Audio_.play('swipe');
+  // le croupier regarde sa carte cachée s'il montre un as ou un dix :
+  // avec un blackjack, la main s'arrête tout de suite (règle standard)
+  const visible = BJ.croupier[0].v;
+  if((visible==='A' || valeurSeparation(BJ.croupier[0])==='10') && estBJ(BJ.croupier)){
+    BJ.mains[0].finie = true; messageBJ('Le croupier a un blackjack.'); denouement(); return; }
   if(estBJ(BJ.mains[0].cartes)){ BJ.mains[0].finie = true; finirCroupier(); }
   else peindreBJ();
 }
@@ -48,7 +54,7 @@ function doubler(){
   const m = BJ.mains[BJ.iMain];
   if(m.cartes.length!==2 || m.doublee) return;
   if(m.mise > G.prof.cashBj){ messageBJ('Pas assez pour doubler.'); return; }
-  G.prof.cashBj -= m.mise; m.mise *= 2; m.doublee = true;
+  G.prof.cashBj -= m.mise; m.mise *= 2; m.doublee = true; Cloud.sauver();
   m.cartes.push(piocher()); Audio_.play('coin');
   mainSuivante();
 }
@@ -59,7 +65,7 @@ function separer(){
   const [a,b] = m.cartes;
   if(valeurSeparation(a)!==valeurSeparation(b)) return;
   if(m.mise > G.prof.cashBj){ messageBJ('Pas assez pour séparer.'); return; }
-  G.prof.cashBj -= m.mise;
+  G.prof.cashBj -= m.mise; Cloud.sauver();
   BJ.mains.splice(BJ.iMain+1, 0, {cartes:[b, piocher()], mise:m.mise, finie:false, doublee:false});
   m.cartes = [a, piocher()];
   Audio_.play('coin'); peindreBJ();
@@ -112,9 +118,11 @@ function denouement(){
   let ruine = false;
   if(G.prof.cashBj < 5){ ruine = true; G.prof.ruinesBj = (G.prof.ruinesBj||0)+1;
     G.prof.cashBj = BJ_DEPART; }
-  majSerie(); saveLocal(); Cloud.saveJeu('blackjack');
+  majSerie(); Cloud.sauver();
+  // la mise suivante ne peut pas dépasser ce qu'il reste en caisse
+  if(BJ.mise > G.prof.cashBj) BJ.mise = Math.max(5, Math.floor(G.prof.cashBj/5)*5);
 
-  Audio_.play(BJ.gainTour>0 ? 'win' : BJ.gainTour<0 ? 'fail' : 'ok');
+  Audio_.play(BJ.gainTour>0 ? 'win' : BJ.gainTour<0 ? 'fail' : 'click');
   peindreBJ(lignes.join(' · '), ruine);
 }
 
